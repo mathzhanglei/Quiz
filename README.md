@@ -46,7 +46,7 @@ q1,"设 $f(x)=x^2+3x$，则 $f'(x)$ 等于？",$x+3$,$2x+3$,$x^2+3$,$2x$,B,5,是
 - `settings.shuffleQuestions`：是否打乱题目
 - `settings.shuffleOptions`：是否打乱选项
 - `settings.showCorrectAnswers`：交卷后是否显示正确答案
-- `settings.submitEndpoint`：成绩收集地址，空字符串表示不集中收集
+- `settings.tencentCollectUrl`：腾讯文档收集表链接，空字符串表示不启用收集表
 
 答案可以写 `"A"`、`"B"`、`"C"`，也可以写选项下标。建议用字母。
 
@@ -60,18 +60,16 @@ q1,"设 $f(x)=x^2+3x$，则 $f'(x)$ 等于？",$x+3$,$2x+3$,$x^2+3$,$2x$,B,5,是
 6. 等 GitHub 给出 Pages 地址
 7. 把地址生成二维码，学生用微信扫码打开
 
-## 收集全班成绩
+## 用腾讯文档收集成绩
 
-GitHub Pages 自己不能保存提交结果。要集中收成绩，可以用 Google 表格：
+GitHub Pages 自己不能保存提交结果。腾讯文档收集表也不适合把公开写入接口直接暴露给静态网页，所以这里采用稳定的半自动流程：
 
-1. 新建一个 Google Sheet
-2. 打开 `Extensions` → `Apps Script`
-3. 粘贴 `collect-to-google-sheet.gs` 的内容
-4. 点击 `Deploy` → `New deployment`
-5. 类型选择 `Web app`
-6. `Execute as` 选择自己
-7. `Who has access` 选择 `Anyone`
-8. 复制部署 URL
-9. 把 URL 填到 `questions.js` 的 `settings.submitEndpoint`
+1. 新建一个腾讯文档收集表
+2. 建议添加一个必填字段：`成绩摘要`
+3. 发布收集表，复制学生填写链接
+4. 把链接填到 `questions.js` 的 `settings.tencentCollectUrl`
+5. 学生交卷后点击「提交到腾讯文档」
+6. 网页会复制成绩摘要并打开腾讯文档收集表
+7. 学生把摘要粘贴到 `成绩摘要` 字段并提交
 
-配置后，学生交卷时会自动提交到 Google Sheet 的 `Results` 工作表。
+成绩摘要里包含姓名、班级、学号、分数、用时和逐题作答记录。若需要自动写入腾讯文档在线表格，需要额外部署一个服务端中转，不能只靠 GitHub Pages 完成。

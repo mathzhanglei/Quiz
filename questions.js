@@ -11,7 +11,7 @@ window.QUIZ_CONFIG = {
     shuffleQuestions: false,
     shuffleOptions: false,
     showCorrectAnswers: true,
-    submitEndpoint: ""
+    tencentCollectUrl: ""
   },
   questions: []
 };
