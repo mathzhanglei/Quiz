@@ -6,7 +6,7 @@
     shuffleQuestions: false,
     shuffleOptions: false,
     showCorrectAnswers: true,
-    tencentCollectUrl: "",
+    submitEndpoint: "",
     ...(config.settings || {})
   };
 
@@ -59,7 +59,6 @@
     scoreDetail: $("scoreDetail"),
     submitStatus: $("submitStatus"),
     reviewPanel: $("reviewPanel"),
-    tencentCollectButton: $("tencentCollectButton"),
     downloadCsvButton: $("downloadCsvButton"),
     copySummaryButton: $("copySummaryButton"),
     restartButton: $("restartButton")
@@ -86,8 +85,6 @@
     elements.nextButton.addEventListener("click", () => goToQuestion(state.currentIndex + 1));
     elements.submitButton.addEventListener("click", () => submitQuiz(false));
     elements.restartButton.addEventListener("click", restart);
-    elements.tencentCollectButton.hidden = !String(settings.tencentCollectUrl || "").trim();
-    elements.tencentCollectButton.addEventListener("click", openTencentCollection);
     elements.downloadCsvButton.addEventListener("click", downloadCsv);
     elements.copySummaryButton.addEventListener("click", copySummary);
     elements.themeToggle.addEventListener("click", toggleTheme);
@@ -526,10 +523,25 @@
   }
 
   function sendResult() {
-    const collectUrl = String(settings.tencentCollectUrl || "").trim();
-    elements.submitStatus.textContent = collectUrl
-      ? "成绩已生成。点击“提交到腾讯文档”会复制成绩摘要并打开收集表。"
-      : "成绩已在本机生成。";
+    const endpoint = String(settings.submitEndpoint || "").trim();
+    if (!endpoint) {
+      elements.submitStatus.textContent = elements.submitStatus.textContent || "成绩已在本机生成。";
+      return;
+    }
+
+    const payload = buildPayload();
+    fetch(endpoint, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    })
+      .then(() => {
+        elements.submitStatus.textContent = "成绩已提交到 Google 表格。";
+      })
+      .catch(() => {
+        elements.submitStatus.textContent = "成绩提交失败，请导出结果后交给老师。";
+      });
   }
 
   function buildPayload() {
@@ -622,24 +634,6 @@
       `交卷：${payload.endedAt}`,
       `答题：${answers}`
     ].join("\n");
-  }
-
-  function openTencentCollection() {
-    const collectUrl = String(settings.tencentCollectUrl || "").trim();
-    if (!collectUrl) {
-      elements.submitStatus.textContent = "还没有配置腾讯文档收集表链接。";
-      return;
-    }
-
-    window.open(collectUrl, "_blank", "noopener");
-    navigator.clipboard
-      .writeText(summaryText())
-      .then(() => {
-        elements.submitStatus.textContent = "成绩摘要已复制，请在腾讯文档收集表中粘贴并提交。";
-      })
-      .catch(() => {
-        elements.submitStatus.textContent = "已打开腾讯文档收集表；如果未自动复制，请返回本页点“复制摘要”。";
-      });
   }
 
   function formatDuration(seconds) {
