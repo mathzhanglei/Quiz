@@ -277,6 +277,10 @@ input:focus {
   padding: 0;
 }
 
+.link-button {
+  text-decoration: none;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -509,6 +513,22 @@ button svg,
   font-size: 0.92rem;
 }
 
+.review-explanation {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  line-height: 1.65;
+}
+
+.review-explanation strong {
+  color: var(--primary-strong);
+  font-size: 0.9rem;
+}
+
 .review-options {
   display: grid;
   gap: 8px;
@@ -548,6 +568,180 @@ button svg,
   border-color: var(--danger);
 }
 
+.stats-shell {
+  width: min(1240px, calc(100% - 32px));
+}
+
+.stats-upload {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.stats-upload .source-status {
+  flex: 1 1 220px;
+  margin: 0;
+  align-self: center;
+}
+
+.stats-token {
+  flex: 0 1 220px;
+}
+
+.file-picker {
+  min-width: min(420px, 100%);
+}
+
+.file-picker input {
+  padding: 10px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.summary-card,
+.stats-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.summary-card {
+  display: grid;
+  gap: 8px;
+  min-height: 96px;
+  padding: 16px;
+}
+
+.summary-card span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.summary-card strong {
+  color: var(--primary-strong);
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.stats-two-col {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.4fr);
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.stats-panel {
+  padding: 18px;
+}
+
+.stats-panel-head {
+  margin-bottom: 14px;
+}
+
+.stats-panel-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.score-bars,
+.question-stats {
+  display: grid;
+  gap: 10px;
+}
+
+.score-bar-row {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) 36px;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.score-bar-row div,
+.question-rate {
+  height: 10px;
+  overflow: hidden;
+  background: var(--surface-soft);
+  border-radius: 999px;
+}
+
+.score-bar-row i,
+.question-rate i {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  border-radius: inherit;
+}
+
+.student-table-wrap {
+  overflow-x: auto;
+}
+
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+  font-size: 0.92rem;
+}
+
+.student-table th,
+.student-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.student-table th {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.question-stat {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.question-stat-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  line-height: 1.55;
+}
+
+.question-stat-title strong {
+  min-width: 0;
+  font-weight: 800;
+}
+
+.question-stat-title span {
+  color: var(--primary-strong);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.question-stat-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 [hidden] {
   display: none !important;
 }
@@ -564,8 +758,13 @@ button svg,
 
   .student-form,
   .quiz-layout,
-  .result-layout {
+  .result-layout,
+  .stats-two-col {
     grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .student-form {
@@ -641,5 +840,30 @@ button svg,
   .history-item button,
   .history-head button {
     width: 100%;
+  }
+
+  .stats-shell {
+    width: min(100% - 16px, 520px);
+  }
+
+  .stats-upload {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stats-token {
+    flex-basis: auto;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .score-bar-row {
+    grid-template-columns: 76px minmax(0, 1fr) 28px;
+  }
+
+  .question-stat-title {
+    flex-direction: column;
   }
 }

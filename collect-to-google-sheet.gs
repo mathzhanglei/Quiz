@@ -1,5 +1,11 @@
-function doGet() {
+const STATS_TOKEN = "";
+
+function doGet(e) {
   try {
+    if (e && e.parameter && e.parameter.action === "results") {
+      return results_(e);
+    }
+
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     if (!spreadsheet) {
       return json_({
@@ -16,6 +22,49 @@ function doGet() {
   } catch (error) {
     return json_({ ok: false, error: String(error) });
   }
+}
+
+function results_(e) {
+  const callback = e && e.parameter && e.parameter.callback || "";
+
+  if (!STATS_TOKEN) {
+    return json_({
+      ok: false,
+      error: "请先在收集脚本里设置 STATS_TOKEN，然后重新部署 Web App。"
+    }, callback);
+  }
+
+  if (!e || !e.parameter || e.parameter.token !== STATS_TOKEN) {
+    return json_({ ok: false, error: "统计口令不正确。" }, callback);
+  }
+
+  const sheet = getResultSheet_();
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return json_({ ok: true, records: [], count: 0 }, callback);
+  }
+
+  const headers = values[0].map(function (value) {
+    return String(value || "");
+  });
+  const records = values.slice(1)
+    .filter(function (row) {
+      return row.some(function (cell) { return cell !== "" && cell !== null; });
+    })
+    .map(function (row) {
+      const record = {};
+      headers.forEach(function (header, index) {
+        record[header] = normalizeCell_(row[index]);
+      });
+      return record;
+    });
+
+  return json_({
+    ok: true,
+    records: records,
+    count: records.length,
+    generatedAt: new Date().toISOString()
+  }, callback);
 }
 
 function doPost(e) {
@@ -93,7 +142,24 @@ function getResultSheet_() {
   return sheet;
 }
 
-function json_(data) {
+function normalizeCell_(value) {
+  if (value instanceof Date) return value.toISOString();
+  if (value === null || value === undefined) return "";
+  return value;
+}
+
+function json_(data, callback) {
+  if (callback) {
+    const safeCallback = /^[A-Za-z_$][0-9A-Za-z_$]*(\.[A-Za-z_$][0-9A-Za-z_$]*)*$/.test(callback)
+      ? callback
+      : "";
+    if (safeCallback) {
+      return ContentService
+        .createTextOutput(safeCallback + "(" + JSON.stringify(data) + ");")
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);

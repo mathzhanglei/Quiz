@@ -155,6 +155,7 @@
       const answer = normalizeAnswerText(getField(record, ["answer", "correct", "正确答案", "答案"]));
       const score = Number(getField(record, ["score", "points", "point", "分值", "分数"]) || 1);
       const id = getField(record, ["id", "编号", "题号"]) || `q${index + 1}`;
+      const explanation = getField(record, ["explanation", "解析", "答案解析", "说明"]);
       const options = optionFields(record);
 
       if (!prompt || options.length < 2 || !answer || normalizeAnswer(answer, options) < 0) {
@@ -166,6 +167,7 @@
         id,
         prompt: cleanQuestionText(prompt),
         options: options.map(cleanQuestionText),
+        explanation: cleanQuestionText(explanation),
         answer,
         score: Number.isFinite(score) && score > 0 ? score : 1
       });
@@ -472,6 +474,7 @@
         selectedLetter: selectedIndex === undefined ? "" : letters[selectedVisibleIndex],
         correctIndex: question.correctIndex,
         correctLetter: letters[correctVisibleIndex],
+        explanation: question.explanation || "",
         isCorrect,
         score: isCorrect ? question.score : 0,
         maxScore: question.score,
@@ -514,6 +517,13 @@
       meta.textContent = `${item.isCorrect ? "正确" : "错误"} · 你的答案 ${selected}${correct}`;
 
       article.append(title, meta);
+      if (item.explanation) {
+        const explanation = document.createElement("div");
+        explanation.className = "review-explanation";
+        explanation.innerHTML = `<strong>解析</strong><span>${item.explanation}</span>`;
+        article.append(explanation);
+      }
+
       if (settings.showCorrectAnswers) {
         const options = document.createElement("div");
         options.className = "review-options";

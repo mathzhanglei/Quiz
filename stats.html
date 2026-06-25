@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>答题统计</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"], ["\\(", "\\)"]],
+          displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+          processEscapes: true
+        },
+        options: {
+          skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+        }
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script defer src="./questions.js"></script>
+    <script defer src="./stats.js"></script>
+  </head>
+  <body>
+    <main class="app-shell stats-shell">
+      <section class="topbar" aria-label="统计信息">
+        <div>
+          <p class="eyebrow">Teacher</p>
+          <h1>答题统计</h1>
+        </div>
+        <div class="topbar-actions">
+          <a class="ghost link-button" href="./index.html">
+            <i data-lucide="arrow-left"></i>
+            返回考试
+          </a>
+        </div>
+      </section>
+
+      <section class="panel stats-upload">
+        <label class="stats-token">
+          <span>统计口令</span>
+          <input id="statsToken" type="password" autocomplete="off" />
+        </label>
+        <button class="primary" id="loadRemoteButton" type="button">
+          <i data-lucide="refresh-cw"></i>
+          自动读取
+        </button>
+        <label class="file-picker">
+          <span>成绩 CSV</span>
+          <input id="resultsFile" type="file" accept=".csv,text/csv" />
+        </label>
+        <button class="secondary" id="loadSampleButton" type="button">
+          <i data-lucide="file-search"></i>
+          读取示例结构
+        </button>
+        <p class="source-status" id="statsStatus">等待选择成绩 CSV。</p>
+      </section>
+
+      <section class="stats-grid" id="summaryGrid" hidden></section>
+
+      <section class="stats-two-col" id="statsPanels" hidden>
+        <section class="panel stats-panel">
+          <div class="stats-panel-head">
+            <p class="eyebrow">Scores</p>
+            <h2>分数分布</h2>
+          </div>
+          <div class="score-bars" id="scoreBars"></div>
+        </section>
+
+        <section class="panel stats-panel">
+          <div class="stats-panel-head">
+            <p class="eyebrow">Students</p>
+            <h2>学生成绩</h2>
+          </div>
+          <div class="student-table-wrap">
+            <table class="student-table">
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th>班级</th>
+                  <th>学号</th>
+                  <th>成绩</th>
+                  <th>正确</th>
+                  <th>用时</th>
+                </tr>
+              </thead>
+              <tbody id="studentTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel stats-panel" id="questionStatsPanel" hidden>
+        <div class="stats-panel-head">
+          <p class="eyebrow">Questions</p>
+          <h2>逐题统计</h2>
+        </div>
+        <div class="question-stats" id="questionStats"></div>
+      </section>
+    </main>
+  </body>
+</html>
