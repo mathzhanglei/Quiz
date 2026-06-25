@@ -5,7 +5,7 @@ function doGet(e) {
     if (e && e.parameter && e.parameter.action === "submit") {
       const data = parsePayload_(e);
       appendResult_(data);
-      return json_({ ok: true }, e.parameter.callback || "");
+      return json_({ ok: true, saved: true }, e.parameter.callback || "");
     }
 
     if (e && e.parameter && e.parameter.action === "results") {
@@ -77,7 +77,7 @@ function doPost(e) {
   try {
     const data = parsePayload_(e);
     appendResult_(data);
-    return json_({ ok: true });
+    return json_({ ok: true, saved: true });
   } catch (error) {
     return json_({ ok: false, error: String(error) });
   }

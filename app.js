@@ -576,8 +576,8 @@
     elements.submitStatus.textContent = "正在提交成绩...";
     submitResult(endpoint, payload)
       .then((data) => {
-        if (!data || data.ok !== true) {
-          throw new Error(data && data.error ? data.error : "收集端没有返回成功。");
+        if (!data || data.ok !== true || data.saved !== true) {
+          throw new Error(data && data.error ? data.error : "收集端没有确认写入，请检查 Apps Script 是否已更新部署。");
         }
         elements.submitStatus.textContent = "成绩已提交到收集表。";
       })
