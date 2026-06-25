@@ -2,6 +2,12 @@ const STATS_TOKEN = "";
 
 function doGet(e) {
   try {
+    if (e && e.parameter && e.parameter.action === "submit") {
+      const data = parsePayload_(e);
+      appendResult_(data);
+      return json_({ ok: true }, e.parameter.callback || "");
+    }
+
     if (e && e.parameter && e.parameter.action === "results") {
       return results_(e);
     }
@@ -68,9 +74,17 @@ function results_(e) {
 }
 
 function doPost(e) {
-  const sheet = getResultSheet_();
-  const data = parsePayload_(e);
+  try {
+    const data = parsePayload_(e);
+    appendResult_(data);
+    return json_({ ok: true });
+  } catch (error) {
+    return json_({ ok: false, error: String(error) });
+  }
+}
 
+function appendResult_(data) {
+  const sheet = getResultSheet_();
   sheet.appendRow([
     new Date(),
     data.quizTitle || "",
@@ -86,15 +100,36 @@ function doPost(e) {
     data.startedAt || "",
     data.endedAt || "",
     data.durationSeconds || 0,
-    JSON.stringify(data.answers || [])
+    JSON.stringify(data.answers || []),
+    data.questionSet || ""
   ]);
-
-  return json_({ ok: true });
 }
 
 function parsePayload_(e) {
   if (e && e.parameter && e.parameter.payload) {
     return JSON.parse(e.parameter.payload);
+  }
+
+  if (e && e.parameter && e.parameter.action === "submit") {
+    return {
+      quizTitle: e.parameter.quiz || "",
+      questionSet: e.parameter.set || "",
+      course: e.parameter.course || "",
+      student: {
+        name: e.parameter.name || "",
+        className: e.parameter.class || "",
+        studentId: e.parameter.student_id || ""
+      },
+      score: Number(e.parameter.score || 0),
+      total: Number(e.parameter.total || 0),
+      percent: Number(e.parameter.percent || 0),
+      correctCount: Number(e.parameter.correct || 0),
+      questionCount: Number(e.parameter.questions || 0),
+      startedAt: e.parameter.started_at || "",
+      endedAt: e.parameter.ended_at || "",
+      durationSeconds: Number(e.parameter.duration_seconds || 0),
+      answers: parseAnswers_(e.parameter.answers || "")
+    };
   }
 
   if (e && e.postData && e.postData.contents) {
@@ -113,30 +148,52 @@ function parsePayload_(e) {
   return {};
 }
 
+function parseAnswers_(value) {
+  if (!value) return [];
+  return value.split(";")
+    .filter(function (item) { return item !== ""; })
+    .map(function (item) {
+      const parts = item.split(":");
+      return {
+        id: parts[0] || "",
+        selected: parts[1] || "",
+        correct: parts[2] || "",
+        isCorrect: parts[3] === "1",
+        score: Number(parts[4] || 0),
+        maxScore: Number(parts[5] || 0)
+      };
+    });
+}
+
 function getResultSheet_() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheetName = "Results";
   let sheet = spreadsheet.getSheetByName(sheetName);
   if (!sheet) sheet = spreadsheet.insertSheet(sheetName);
 
+  const headers = [
+    "submitted_at",
+    "quiz",
+    "course",
+    "name",
+    "class",
+    "student_id",
+    "score",
+    "total",
+    "percent",
+    "correct",
+    "questions",
+    "started_at",
+    "ended_at",
+    "duration_seconds",
+    "answers_json",
+    "question_set"
+  ];
+
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "submitted_at",
-      "quiz",
-      "course",
-      "name",
-      "class",
-      "student_id",
-      "score",
-      "total",
-      "percent",
-      "correct",
-      "questions",
-      "started_at",
-      "ended_at",
-      "duration_seconds",
-      "answers_json"
-    ]);
+    sheet.appendRow(headers);
+  } else if (sheet.getRange(1, headers.length).getValue() !== headers[headers.length - 1]) {
+    sheet.getRange(1, headers.length).setValue(headers[headers.length - 1]);
   }
 
   return sheet;

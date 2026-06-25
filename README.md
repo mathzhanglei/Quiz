@@ -45,11 +45,46 @@ q1,"设 $f(x)=x^2+3x$，则 $f'(x)$ 等于？",$x+3$,$2x+3$,$x^2+3$,$2x$,B,5,是
 - `meta.course`：课程/班级名
 - `meta.timeLimitMinutes`：限时分钟数，`0` 表示不限时
 - `settings.questionSource`：题库 CSV 路径，默认 `./questions.csv`
+- `settings.defaultSet`：默认试卷编号
 - `settings.shuffleQuestions`：是否打乱题目
 - `settings.shuffleOptions`：是否打乱选项
 - `settings.showCorrectAnswers`：交卷后是否显示正确答案
 
 答案可以写 `"A"`、`"B"`、`"C"`，也可以写选项下标。建议用字母。
+
+## 按章节出题
+
+一章题对应一个 CSV 文件。例如：
+
+- `questions-chapter3.csv`：第三章
+- `questions-chapter4.csv`：第四章
+
+然后在 `questions.js` 里登记：
+
+```js
+questionSets: {
+  chapter3: {
+    label: "第三章",
+    title: "复变函数第三章在线练习",
+    questionSource: "./questions-chapter3.csv"
+  },
+  chapter4: {
+    label: "第四章",
+    title: "复变函数第四章在线练习",
+    questionSource: "./questions-chapter4.csv"
+  }
+}
+```
+
+学生链接：
+
+- 第三章：`https://mathzhanglei.github.io/Quiz/?set=chapter3`
+- 第四章：`https://mathzhanglei.github.io/Quiz/?set=chapter4`
+
+老师统计：
+
+- 第三章：`https://mathzhanglei.github.io/Quiz/stats.html?set=chapter3`
+- 第四章：`https://mathzhanglei.github.io/Quiz/stats.html?set=chapter4`
 
 ## 放到 GitHub Pages
 
@@ -66,7 +101,7 @@ q1,"设 $f(x)=x^2+3x$，则 $f'(x)$ 等于？",$x+3$,$2x+3$,$x^2+3$,$2x$,B,5,是
 GitHub Pages 自己不能保存提交结果。当前页面提供两种本地结果交付方式：
 
 1. 学生交卷后点击「导出结果」，生成个人 CSV 成绩文件
-2. 学生交卷后点击「复制摘要」，把姓名、班级、学号、分数、用时和逐题作答记录复制出来
+2. 学生交卷后点击「复制摘要」，把姓名、学号、分数、用时和逐题作答记录复制出来
 
 如果要集中汇总全班成绩，可以让学生提交导出的 CSV 文件，或把复制摘要粘贴到老师指定的收集入口。
 

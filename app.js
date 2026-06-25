@@ -1,7 +1,7 @@
 (function () {
   const config = window.QUIZ_CONFIG || {};
-  const meta = config.meta || {};
-  const settings = {
+  const baseMeta = config.meta || {};
+  const baseSettings = {
     questionSource: "",
     shuffleQuestions: false,
     shuffleOptions: false,
@@ -9,6 +9,24 @@
     submitEndpoint: "",
     ...(config.settings || {})
   };
+  const questionSets = config.questionSets || baseSettings.questionSets || {};
+  const selectedQuestionSet = resolveQuestionSet(questionSets, baseSettings.defaultSet || "default");
+  const meta = {
+    ...baseMeta,
+    ...(selectedQuestionSet.meta || {})
+  };
+  const settings = {
+    ...baseSettings,
+    ...(selectedQuestionSet.settings || {})
+  };
+  if (selectedQuestionSet.title) meta.title = selectedQuestionSet.title;
+  if (selectedQuestionSet.course) meta.course = selectedQuestionSet.course;
+  if (selectedQuestionSet.timeLimitMinutes !== undefined) meta.timeLimitMinutes = selectedQuestionSet.timeLimitMinutes;
+  if (selectedQuestionSet.instructions) meta.instructions = selectedQuestionSet.instructions;
+  if (selectedQuestionSet.questionSource) settings.questionSource = selectedQuestionSet.questionSource;
+  if (selectedQuestionSet.shuffleQuestions !== undefined) settings.shuffleQuestions = selectedQuestionSet.shuffleQuestions;
+  if (selectedQuestionSet.shuffleOptions !== undefined) settings.shuffleOptions = selectedQuestionSet.shuffleOptions;
+  if (selectedQuestionSet.showCorrectAnswers !== undefined) settings.showCorrectAnswers = selectedQuestionSet.showCorrectAnswers;
 
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   const historyLimit = 8;
@@ -72,7 +90,8 @@
   async function boot() {
     elements.quizTitle.textContent = meta.title || "TeX 单选测验";
     document.title = meta.title || "TeX 单选测验";
-    elements.courseLabel.textContent = meta.course || "Quiz";
+    const setLabel = selectedQuestionSet.label ? ` · ${selectedQuestionSet.label}` : "";
+    elements.courseLabel.textContent = `${meta.course || "Quiz"}${setLabel}`;
     if (meta.instructions) {
       elements.introText.innerHTML = cleanQuestionText(meta.instructions);
       elements.introText.hidden = false;
@@ -554,25 +573,85 @@
     }
 
     const payload = buildPayload();
-    const body = new URLSearchParams();
-    body.set("payload", JSON.stringify(payload));
-
-    fetch(endpoint, {
-      method: "POST",
-      mode: "no-cors",
-      body
-    })
-      .then(() => {
-        elements.submitStatus.textContent = "成绩已提交到 Google 表格。";
+    elements.submitStatus.textContent = "正在提交成绩...";
+    submitResult(endpoint, payload)
+      .then((data) => {
+        if (!data || data.ok !== true) {
+          throw new Error(data && data.error ? data.error : "收集端没有返回成功。");
+        }
+        elements.submitStatus.textContent = "成绩已提交到收集表。";
       })
-      .catch(() => {
-        elements.submitStatus.textContent = "成绩提交失败，请导出结果后交给老师。";
+      .catch((error) => {
+        elements.submitStatus.textContent = `成绩提交失败：${error.message || "请检查网络或收集脚本部署。"} 可先导出结果后交给老师。`;
       });
+  }
+
+  function submitResult(endpoint, payload) {
+    return new Promise((resolve, reject) => {
+      const callbackName = `__quizSubmitCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const url = new URL(endpoint, window.location.href);
+      url.searchParams.set("action", "submit");
+      url.searchParams.set("callback", callbackName);
+      Object.entries(compactPayload(payload)).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
+      });
+
+      const script = document.createElement("script");
+      const timer = window.setTimeout(() => {
+        cleanup();
+        reject(new Error("连接收集端超时"));
+      }, 20000);
+
+      function cleanup() {
+        window.clearTimeout(timer);
+        delete window[callbackName];
+        script.remove();
+      }
+
+      window[callbackName] = (data) => {
+        cleanup();
+        resolve(data);
+      };
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("无法连接收集端"));
+      };
+      script.src = url.toString();
+      document.head.append(script);
+    });
+  }
+
+  function compactPayload(payload) {
+    return {
+      quiz: payload.quizTitle,
+      set: payload.questionSet,
+      course: payload.course,
+      name: payload.student.name,
+      class: payload.student.className,
+      student_id: payload.student.studentId,
+      score: payload.score,
+      total: payload.total,
+      percent: payload.percent,
+      correct: payload.correctCount,
+      questions: payload.questionCount,
+      started_at: payload.startedAt,
+      ended_at: payload.endedAt,
+      duration_seconds: payload.durationSeconds,
+      answers: payload.answers.map((answer) => [
+        answer.id,
+        answer.selected || "",
+        answer.correct || "",
+        answer.isCorrect ? "1" : "0",
+        answer.score,
+        answer.maxScore
+      ].join(":")).join(";")
+    };
   }
 
   function buildPayload() {
     return {
       quizTitle: meta.title || "",
+      questionSet: selectedQuestionSet.id || "",
       course: meta.course || "",
       student: state.student,
       score: state.result.earned,
@@ -812,6 +891,26 @@
       hour: "2-digit",
       minute: "2-digit"
     });
+  }
+
+  function resolveQuestionSet(questionSets, defaultSet) {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("set") || params.get("paper") || defaultSet || "";
+    const setIds = Object.keys(questionSets || {});
+    if (!setIds.length) return { id: "" };
+
+    const exactId = setIds.find((id) => id === requested);
+    const normalizedId = setIds.find((id) => normalizeSetId(id) === normalizeSetId(requested));
+    const fallbackId = setIds.includes(defaultSet) ? defaultSet : setIds[0];
+    const id = exactId || normalizedId || fallbackId;
+    return {
+      id,
+      ...(questionSets[id] || {})
+    };
+  }
+
+  function normalizeSetId(value) {
+    return String(value || "").trim().toLowerCase();
   }
 
   window.addEventListener("DOMContentLoaded", boot);

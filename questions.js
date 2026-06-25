@@ -8,10 +8,28 @@ window.QUIZ_CONFIG = {
   },
   settings: {
     questionSource: "./questions.csv",
+    defaultSet: "default",
     shuffleQuestions: false,
     shuffleOptions: false,
     showCorrectAnswers: true,
     submitEndpoint: "https://script.google.com/macros/s/AKfycbz5pzJNjsuXGrSmqgwpkGeZPntmkHs-EcObh1t7dOu1p7simq8WZLJkHG6isa2BvhBfcw/exec"
+  },
+  questionSets: {
+    default: {
+      label: "默认",
+      title: "复变函数基础在线考试",
+      questionSource: "./questions.csv"
+    },
+    chapter3: {
+      label: "第三章",
+      title: "复变函数第三章在线练习",
+      questionSource: "./questions-chapter3.csv"
+    },
+    chapter4: {
+      label: "第四章",
+      title: "复变函数第四章在线练习",
+      questionSource: "./questions-chapter4.csv"
+    }
   },
   questions: []
 };

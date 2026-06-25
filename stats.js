@@ -1,7 +1,15 @@
 (function () {
   const config = window.QUIZ_CONFIG || {};
-  const settings = config.settings || {};
-  const questionSource = "./questions.csv";
+  const baseSettings = config.settings || {};
+  const questionSets = config.questionSets || baseSettings.questionSets || {};
+  const selectedQuestionSet = resolveQuestionSet(questionSets, baseSettings.defaultSet || "default");
+  const settings = {
+    ...baseSettings,
+    ...(selectedQuestionSet.settings || {})
+  };
+  if (selectedQuestionSet.questionSource) settings.questionSource = selectedQuestionSet.questionSource;
+  const questionSource = settings.questionSource || "./questions.csv";
+  const selectedQuizTitle = selectedQuestionSet.title || (selectedQuestionSet.meta && selectedQuestionSet.meta.title) || (config.meta && config.meta.title) || "";
   const statsEndpoint = String(settings.statsEndpoint || settings.submitEndpoint || "").trim();
   const statsTokenKey = "texQuizStatsToken";
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -68,7 +76,7 @@
     }
 
     const records = recordsFromRows(rows);
-    const attempts = records.map(normalizeAttempt).filter(Boolean);
+    const attempts = attemptsFromRecords(records);
     if (!attempts.length) {
       setStatus("没有识别到有效成绩记录。");
       return;
@@ -97,7 +105,7 @@
       }
 
       const records = Array.isArray(data.records) ? data.records : recordsFromRemoteRows(data);
-      const attempts = records.map(normalizeAttempt).filter(Boolean);
+      const attempts = attemptsFromRecords(records);
       if (!attempts.length) {
         setStatus("已经连上收集表，但还没有识别到有效成绩。");
         return;
@@ -152,6 +160,23 @@
     return recordsFromRows(rows);
   }
 
+  function attemptsFromRecords(records) {
+    const attempts = records.map(normalizeAttempt).filter(Boolean);
+    return filterAttemptsByQuestionSet(attempts);
+  }
+
+  function filterAttemptsByQuestionSet(attempts) {
+    if (!selectedQuestionSet.explicit || !selectedQuestionSet.id) return attempts;
+    const selectedSetId = normalizeSetId(selectedQuestionSet.id);
+    const selectedTitle = normalizeComparable(selectedQuizTitle);
+    const filtered = attempts.filter((attempt) => {
+      const attemptSet = normalizeSetId(attempt.questionSet);
+      const attemptTitle = normalizeComparable(attempt.quizTitle);
+      return attemptSet === selectedSetId || (selectedTitle && attemptTitle === selectedTitle);
+    });
+    return filtered;
+  }
+
   function normalizeAttempt(record) {
     const payload = parseJsonObject(getField(record, ["payload", "原始数据", "提交数据"]));
     const student = payload && payload.student ? payload.student : {};
@@ -179,6 +204,8 @@
     if (!answers.length && !Number.isFinite(score)) return null;
 
     return {
+      quizTitle: getField(record, ["quiz", "quiztitle", "试卷", "测验"]) || (payload && payload.quizTitle) || "",
+      questionSet: getField(record, ["question_set", "questionset", "set", "卷别"]) || (payload && payload.questionSet) || "",
       name: getField(record, ["name", "姓名"]) || student.name || "-",
       className: getField(record, ["class", "className", "班级"]) || student.className || "-",
       studentId: getField(record, ["student_id", "studentid", "学号"]) || student.studentId || "-",
@@ -521,6 +548,32 @@
     if (window.MathJax && window.MathJax.typesetPromise) {
       window.MathJax.typesetPromise();
     }
+  }
+
+  function resolveQuestionSet(questionSets, defaultSet) {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("set") || params.get("paper") || defaultSet || "";
+    const explicit = Boolean(params.get("set") || params.get("paper"));
+    const setIds = Object.keys(questionSets || {});
+    if (!setIds.length) return { id: "", explicit };
+
+    const exactId = setIds.find((id) => id === requested);
+    const normalizedId = setIds.find((id) => normalizeSetId(id) === normalizeSetId(requested));
+    const fallbackId = setIds.includes(defaultSet) ? defaultSet : setIds[0];
+    const id = exactId || normalizedId || fallbackId;
+    return {
+      id,
+      explicit,
+      ...(questionSets[id] || {})
+    };
+  }
+
+  function normalizeSetId(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function normalizeComparable(value) {
+    return String(value || "").trim().replace(/\s+/g, "");
   }
 
   window.addEventListener("DOMContentLoaded", boot);
