@@ -1,3 +1,23 @@
+function doGet() {
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    if (!spreadsheet) {
+      return json_({
+        ok: false,
+        error: "No active spreadsheet. Open Apps Script from the target Google Sheet via Extensions > Apps Script."
+      });
+    }
+
+    return json_({
+      ok: true,
+      spreadsheetName: spreadsheet.getName(),
+      spreadsheetId: spreadsheet.getId()
+    });
+  } catch (error) {
+    return json_({ ok: false, error: String(error) });
+  }
+}
+
 function doPost(e) {
   const sheet = getResultSheet_();
   const data = JSON.parse((e && e.postData && e.postData.contents) || "{}");
@@ -20,9 +40,7 @@ function doPost(e) {
     JSON.stringify(data.answers || [])
   ]);
 
-  return ContentService
-    .createTextOutput(JSON.stringify({ ok: true }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return json_({ ok: true });
 }
 
 function getResultSheet_() {
@@ -52,4 +70,10 @@ function getResultSheet_() {
   }
 
   return sheet;
+}
+
+function json_(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }
