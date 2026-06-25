@@ -40,7 +40,6 @@
     studentForm: $("studentForm"),
     introText: $("introText"),
     studentName: $("studentName"),
-    studentClass: $("studentClass"),
     studentId: $("studentId"),
     startButton: $("startButton"),
     sourceStatus: $("sourceStatus"),
@@ -273,7 +272,7 @@
 
     state.student = {
       name: elements.studentName.value.trim(),
-      className: elements.studentClass.value.trim(),
+      className: "",
       studentId: elements.studentId.value.trim()
     };
     state.startedAt = new Date();
@@ -742,7 +741,6 @@
     return [
       `${payload.quizTitle}`,
       `姓名：${payload.student.name}`,
-      `班级：${payload.student.className || "-"}`,
       `学号：${payload.student.studentId || "-"}`,
       `成绩：${payload.score}/${payload.total}`,
       `正确：${payload.correctCount}/${payload.questionCount}`,
