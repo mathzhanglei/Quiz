@@ -20,7 +20,7 @@ function doGet() {
 
 function doPost(e) {
   const sheet = getResultSheet_();
-  const data = JSON.parse((e && e.postData && e.postData.contents) || "{}");
+  const data = parsePayload_(e);
 
   sheet.appendRow([
     new Date(),
@@ -41,6 +41,27 @@ function doPost(e) {
   ]);
 
   return json_({ ok: true });
+}
+
+function parsePayload_(e) {
+  if (e && e.parameter && e.parameter.payload) {
+    return JSON.parse(e.parameter.payload);
+  }
+
+  if (e && e.postData && e.postData.contents) {
+    const contents = e.postData.contents;
+    if (contents.indexOf("payload=") === 0) {
+      const payload = contents
+        .split("&")
+        .map(function (part) { return part.split("="); })
+        .filter(function (pair) { return decodeURIComponent(pair[0] || "") === "payload"; })
+        .map(function (pair) { return decodeURIComponent((pair[1] || "").replace(/\+/g, " ")); })[0];
+      if (payload) return JSON.parse(payload);
+    }
+    return JSON.parse(contents);
+  }
+
+  return {};
 }
 
 function getResultSheet_() {

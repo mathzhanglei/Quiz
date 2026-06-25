@@ -545,11 +545,13 @@
     }
 
     const payload = buildPayload();
+    const body = new URLSearchParams();
+    body.set("payload", JSON.stringify(payload));
+
     fetch(endpoint, {
       method: "POST",
       mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
+      body
     })
       .then(() => {
         elements.submitStatus.textContent = "成绩已提交到 Google 表格。";
