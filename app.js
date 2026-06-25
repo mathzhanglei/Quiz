@@ -11,12 +11,14 @@
   };
 
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  const historyLimit = 8;
   let originalQuestions = Array.isArray(config.questions) ? config.questions : [];
   let activeQuestionSource = originalQuestions.length ? "内置题库" : "";
   const state = {
     student: null,
     startedAt: null,
     endedAt: null,
+    viewingHistory: false,
     questions: [],
     currentIndex: 0,
     answers: {},
@@ -42,6 +44,9 @@
     studentId: $("studentId"),
     startButton: $("startButton"),
     sourceStatus: $("sourceStatus"),
+    historyPanel: $("historyPanel"),
+    historyList: $("historyList"),
+    clearHistoryButton: $("clearHistoryButton"),
     quizView: $("quizView"),
     progressText: $("progressText"),
     answeredText: $("answeredText"),
@@ -61,7 +66,8 @@
     reviewPanel: $("reviewPanel"),
     downloadCsvButton: $("downloadCsvButton"),
     copySummaryButton: $("copySummaryButton"),
-    restartButton: $("restartButton")
+    restartButton: $("restartButton"),
+    homeButton: $("homeButton")
   };
 
   async function boot() {
@@ -85,11 +91,14 @@
     elements.nextButton.addEventListener("click", () => goToQuestion(state.currentIndex + 1));
     elements.submitButton.addEventListener("click", () => submitQuiz(false));
     elements.restartButton.addEventListener("click", restart);
+    elements.homeButton.addEventListener("click", showStartView);
     elements.downloadCsvButton.addEventListener("click", downloadCsv);
     elements.copySummaryButton.addEventListener("click", copySummary);
+    elements.clearHistoryButton.addEventListener("click", clearHistory);
     elements.themeToggle.addEventListener("click", toggleTheme);
 
     await loadQuestionBank();
+    renderHistoryPanel();
     refreshIcons();
   }
 
@@ -269,6 +278,7 @@
     state.endedAt = null;
     state.currentIndex = 0;
     state.answers = {};
+    state.viewingHistory = false;
     state.submitted = false;
     state.result = null;
     state.questions = prepareQuestions(originalQuestions);
@@ -435,6 +445,8 @@
     clearInterval(state.timerId);
     state.result = gradeQuiz();
     renderResult(isAutoSubmit);
+    saveCurrentAttempt(isAutoSubmit);
+    renderHistoryPanel();
     sendResult();
   }
 
@@ -480,6 +492,7 @@
 
   function renderResult(isAutoSubmit) {
     elements.quizView.hidden = true;
+    elements.startView.hidden = true;
     elements.resultView.hidden = false;
     elements.scoreNumber.textContent = `${state.result.earned}`;
     elements.scoreDetail.textContent = `${state.result.total} 分满分 · ${state.result.correctCount}/${state.result.questionCount} 题正确 · ${formatDuration(state.result.durationSeconds)}`;
@@ -523,6 +536,8 @@
   }
 
   function sendResult() {
+    if (state.viewingHistory) return;
+
     const endpoint = String(settings.submitEndpoint || "").trim();
     if (!endpoint) {
       elements.submitStatus.textContent = elements.submitStatus.textContent || "成绩已在本机生成。";
@@ -566,6 +581,96 @@
         maxScore: item.maxScore
       }))
     };
+  }
+
+  function saveCurrentAttempt(isAutoSubmit) {
+    if (state.viewingHistory) return;
+
+    const attempt = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      quizTitle: meta.title || "",
+      course: meta.course || "",
+      student: { ...state.student },
+      startedAt: state.startedAt.toISOString(),
+      endedAt: state.endedAt.toISOString(),
+      autoSubmitted: Boolean(isAutoSubmit),
+      result: state.result
+    };
+    const history = [attempt, ...loadHistory()].slice(0, historyLimit);
+    localStorage.setItem(historyStorageKey(), JSON.stringify(history));
+  }
+
+  function loadHistory() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(historyStorageKey()) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function historyStorageKey() {
+    return `texQuizHistory:${meta.title || document.title || "quiz"}`;
+  }
+
+  function renderHistoryPanel() {
+    const history = loadHistory();
+    elements.historyPanel.hidden = history.length === 0;
+    elements.historyList.innerHTML = "";
+    if (!history.length) return;
+
+    history.forEach((attempt) => {
+      const item = document.createElement("article");
+      item.className = "history-item";
+
+      const copy = document.createElement("div");
+      copy.className = "history-copy";
+
+      const title = document.createElement("strong");
+      title.textContent = `${attempt.student && attempt.student.name ? attempt.student.name : "未命名"} · ${attempt.result.earned}/${attempt.result.total}`;
+
+      const detail = document.createElement("span");
+      detail.textContent = `${formatDateTime(attempt.endedAt)} · ${attempt.result.correctCount}/${attempt.result.questionCount} 题正确`;
+
+      const button = document.createElement("button");
+      button.className = "secondary";
+      button.type = "button";
+      button.innerHTML = '<i data-lucide="eye"></i> 查看';
+      button.addEventListener("click", () => openHistoryAttempt(attempt.id));
+
+      copy.append(title, detail);
+      item.append(copy, button);
+      elements.historyList.append(item);
+    });
+
+    refreshIcons();
+  }
+
+  function openHistoryAttempt(attemptId) {
+    const attempt = loadHistory().find((item) => item.id === attemptId);
+    if (!attempt) {
+      renderHistoryPanel();
+      return;
+    }
+
+    state.student = { ...(attempt.student || {}) };
+    state.startedAt = new Date(attempt.startedAt);
+    state.endedAt = new Date(attempt.endedAt);
+    state.result = attempt.result;
+    state.viewingHistory = true;
+    state.submitted = true;
+
+    elements.startView.hidden = true;
+    elements.quizView.hidden = true;
+    renderResult(Boolean(attempt.autoSubmitted));
+    elements.submitStatus.textContent = "正在查看本机保存的历史记录。";
+  }
+
+  function clearHistory() {
+    const ok = window.confirm("确定清空本机保存的作答历史吗？");
+    if (!ok) return;
+    localStorage.removeItem(historyStorageKey());
+    renderHistoryPanel();
   }
 
   function downloadCsv() {
@@ -650,7 +755,18 @@
     state.questions = [];
     state.answers = {};
     state.currentIndex = 0;
+    state.viewingHistory = false;
     state.submitted = false;
+  }
+
+  function showStartView() {
+    clearInterval(state.timerId);
+    elements.resultView.hidden = true;
+    elements.quizView.hidden = true;
+    elements.startView.hidden = false;
+    elements.submitStatus.textContent = "";
+    state.viewingHistory = false;
+    renderHistoryPanel();
   }
 
   function toggleTheme() {
@@ -675,6 +791,17 @@
     if (window.MathJax && window.MathJax.typesetPromise) {
       window.MathJax.typesetPromise();
     }
+  }
+
+  function formatDateTime(value) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   }
 
   window.addEventListener("DOMContentLoaded", boot);

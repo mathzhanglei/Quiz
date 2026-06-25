@@ -11,7 +11,7 @@ window.QUIZ_CONFIG = {
     shuffleQuestions: false,
     shuffleOptions: false,
     showCorrectAnswers: true,
-    submitEndpoint: ""
+    submitEndpoint: "https://script.google.com/macros/s/AKfycbz5pzJNjsuXGrSmqgwpkGeZPntmkHs-EcObh1t7dOu1p7simq8WZLJkHG6isa2BvhBfcw/exec"
   },
   questions: []
 };

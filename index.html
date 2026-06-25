@@ -61,6 +61,19 @@
           </button>
         </form>
         <p class="source-status" id="sourceStatus">正在加载题库...</p>
+        <section class="history-panel" id="historyPanel" hidden>
+          <div class="history-head">
+            <div>
+              <p class="eyebrow">历史记录</p>
+              <h2>本机已保存的作答</h2>
+            </div>
+            <button class="ghost" id="clearHistoryButton" type="button">
+              <i data-lucide="trash-2"></i>
+              清空
+            </button>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
       </section>
 
       <section class="quiz-layout" id="quizView" hidden>
@@ -116,6 +129,10 @@
             <button class="ghost" id="restartButton" type="button">
               <i data-lucide="rotate-ccw"></i>
               重新开始
+            </button>
+            <button class="ghost" id="homeButton" type="button">
+              <i data-lucide="home"></i>
+              返回首页
             </button>
           </div>
           <p class="submit-status" id="submitStatus"></p>

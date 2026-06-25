@@ -147,6 +147,63 @@ h1 {
   font-size: 0.92rem;
 }
 
+.history-panel {
+  margin: 0 22px 22px;
+  padding: 16px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.history-head,
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-head {
+  margin-bottom: 12px;
+}
+
+.history-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  min-height: 58px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.history-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.history-copy strong,
+.history-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-copy span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 label span {
   display: block;
   margin-bottom: 7px;
@@ -573,5 +630,16 @@ button svg,
 
   .review-option small {
     grid-column: 2;
+  }
+
+  .history-head,
+  .history-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .history-item button,
+  .history-head button {
+    width: 100%;
   }
 }
