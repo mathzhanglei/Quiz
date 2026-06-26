@@ -12,7 +12,12 @@ window.QUIZ_CONFIG = {
     shuffleQuestions: false,
     shuffleOptions: false,
     showCorrectAnswers: true,
-    submitEndpoint: "https://script.google.com/macros/s/AKfycbz5pzJNjsuXGrSmqgwpkGeZPntmkHs-EcObh1t7dOu1p7simq8WZLJkHG6isa2BvhBfcw/exec"
+    submitProvider: "supabase",
+    supabaseUrl: "https://rwkgqgohsuerpfjjebbn.supabase.co/rest/v1/",
+    supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a2dxZ29oc3VlcnBmamplYmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MTUyNjYsImV4cCI6MjA5Nzk5MTI2Nn0.UBmi56QRPQIzGZ2_HmWkM3ISI3mdGXhATCJ1Q93nz4k",
+    statsProvider: "supabase",
+    statsRpcName: "quiz_results_for_stats",
+    submitEndpoint: ""
   },
   questionSets: {
     default: {

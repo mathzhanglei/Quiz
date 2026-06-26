@@ -10,7 +10,8 @@
   if (selectedQuestionSet.questionSource) settings.questionSource = selectedQuestionSet.questionSource;
   const questionSource = settings.questionSource || "./questions.csv";
   const selectedQuizTitle = selectedQuestionSet.title || (selectedQuestionSet.meta && selectedQuestionSet.meta.title) || (config.meta && config.meta.title) || "";
-  const statsEndpoint = String(settings.statsEndpoint || settings.submitEndpoint || "").trim();
+  const statsEndpoint = String(settings.statsEndpoint || "").trim();
+  const statsRpcName = String(settings.statsRpcName || "quiz_results_for_stats").trim();
   const statsTokenKey = "texQuizStatsToken";
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   let questions = [];
@@ -26,6 +27,8 @@
     statsPanels: $("statsPanels"),
     scoreBars: $("scoreBars"),
     studentTableBody: $("studentTableBody"),
+    wrongRankPanel: $("wrongRankPanel"),
+    wrongRank: $("wrongRank"),
     questionStatsPanel: $("questionStatsPanel"),
     questionStats: $("questionStats")
   };
@@ -44,11 +47,11 @@
     const tokenFromUrl = params.get("statsToken") || params.get("token") || "";
     const savedToken = localStorage.getItem(statsTokenKey) || "";
     elements.statsToken.value = tokenFromUrl || savedToken;
-    elements.loadRemoteButton.disabled = !statsEndpoint;
-    if (!statsEndpoint) {
+    elements.loadRemoteButton.disabled = !hasRemoteStatsSource();
+    if (!hasRemoteStatsSource()) {
       setStatus("没有配置自动读取地址，可上传成绩 CSV。");
     }
-    if (statsEndpoint && (params.get("autoload") === "1" || tokenFromUrl)) {
+    if (hasRemoteStatsSource() && (params.get("autoload") === "1" || tokenFromUrl)) {
       window.setTimeout(loadRemoteResults, 0);
     }
   }
@@ -66,26 +69,100 @@
   }
 
   async function handleFile(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    const text = await file.text();
-    const rows = parseCsv(text).filter((row) => row.some((cell) => cell.trim()));
-    if (rows.length < 2) {
-      setStatus("成绩 CSV 没有可统计的数据。");
-      return;
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+    const attempts = [];
+
+    for (const file of files) {
+      const text = await file.text();
+      attempts.push(...attemptsFromCsv(text));
     }
 
-    const records = recordsFromRows(rows);
-    const attempts = attemptsFromRecords(records);
-    if (!attempts.length) {
+    const filtered = filterAttemptsByQuestionSet(attempts);
+    if (!filtered.length) {
       setStatus("没有识别到有效成绩记录。");
       return;
     }
 
-    renderStats(attempts);
+    renderStats(filtered);
+    setStatus(`已从 ${files.length} 个 CSV 统计 ${filtered.length} 份提交。`);
+  }
+
+  function attemptsFromCsv(text) {
+    const rawRows = parseCsv(text);
+    const personal = attemptFromPersonalCsv(rawRows);
+    if (personal) return [personal];
+
+    const rows = rawRows.filter((row) => row.some((cell) => cell.trim()));
+    if (rows.length < 2) return [];
+    const records = recordsFromRows(rows);
+    return records.map(normalizeAttempt).filter(Boolean);
+  }
+
+  function attemptFromPersonalCsv(rows) {
+    const blankIndex = rows.findIndex((row) => !row.some((cell) => cell.trim()));
+    const answerHeaderIndex = rows.findIndex((row) => normalizeHeader(row[0]) === "question_id");
+    if (blankIndex < 0 || answerHeaderIndex < 0 || rows.length <= answerHeaderIndex + 1) return null;
+
+    const summary = recordsFromRows(rows.slice(0, blankIndex))[0];
+    if (!summary) return null;
+    const answerRows = rows.slice(answerHeaderIndex);
+    const answerRecords = recordsFromRows(answerRows);
+    const answers = answerRecords.map((record) => ({
+      id: getField(record, ["question_id", "questionid", "题号", "编号"]),
+      selected: normalizeAnswerText(getField(record, ["selected", "选择", "作答"])),
+      correct: normalizeAnswerText(getField(record, ["correct", "答案", "正确答案"])),
+      isCorrect: truthyValue(getField(record, ["is_correct", "iscorrect", "是否正确"])),
+      score: firstFinite(numberField(record, ["score", "得分"]), 0),
+      maxScore: firstFinite(numberField(record, ["max_score", "maxscore", "分值"]), 1)
+    }));
+    const attempt = normalizeAttempt({
+      ...summary,
+      answers_json: JSON.stringify(answers)
+    });
+    return attempt && attempt.answers.length ? attempt : null;
+  }
+
+  function attemptsFromRecords(records) {
+    const attempts = records.map(normalizeAttempt).filter(Boolean);
+    return filterAttemptsByQuestionSet(attempts);
+  }
+
+  function filterAttemptsByQuestionSet(attempts) {
+    if (!selectedQuestionSet.explicit || !selectedQuestionSet.id) return attempts;
+    const selectedSetId = normalizeSetId(selectedQuestionSet.id);
+    const selectedTitle = normalizeComparable(selectedQuizTitle);
+    const filtered = attempts.filter((attempt) => {
+      const attemptSet = normalizeSetId(attempt.questionSet);
+      const attemptTitle = normalizeComparable(attempt.quizTitle);
+      return attemptSet === selectedSetId || (selectedTitle && attemptTitle === selectedTitle);
+    });
+    return filtered;
+  }
+
+  function recordsFromRows(rows) {
+    const headers = rows[0].map(normalizeHeader);
+    return rows.slice(1).map((row) => {
+      const record = {};
+      headers.forEach((header, index) => {
+        record[header] = row[index] || "";
+      });
+      return record;
+    });
+  }
+
+  function recordsFromRemoteRows(data) {
+    if (!Array.isArray(data.rows) || !Array.isArray(data.headers)) return [];
+    const rows = [data.headers, ...data.rows];
+    return recordsFromRows(rows);
   }
 
   async function loadRemoteResults() {
+    if (hasSupabaseStatsSource()) {
+      await loadSupabaseResults();
+      return;
+    }
+
     if (!statsEndpoint) {
       setStatus("没有配置自动读取地址，可上传成绩 CSV。");
       return;
@@ -118,6 +195,46 @@
     }
   }
 
+  async function loadSupabaseResults() {
+    const token = elements.statsToken.value.trim();
+    if (!token) {
+      setStatus("请输入统计口令。");
+      return;
+    }
+
+    localStorage.setItem(statsTokenKey, token);
+    setStatus("正在从 Supabase 读取成绩...");
+
+    try {
+      const response = await fetch(`${normalizeSupabaseUrl()}/rest/v1/rpc/${encodeURIComponent(statsRpcName)}`, {
+        method: "POST",
+        headers: {
+          apikey: String(settings.supabaseAnonKey || "").trim(),
+          Authorization: `Bearer ${String(settings.supabaseAnonKey || "").trim()}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ p_token: token })
+      });
+
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || `HTTP ${response.status}`);
+      }
+
+      const records = await response.json();
+      const attempts = attemptsFromRecords(Array.isArray(records) ? records : []);
+      if (!attempts.length) {
+        setStatus("已经连上 Supabase，但还没有识别到有效成绩。");
+        return;
+      }
+
+      renderStats(attempts);
+      setStatus(`已从 Supabase 读取并统计 ${attempts.length} 份提交。`);
+    } catch (error) {
+      setStatus(`自动读取失败：${error.message || "请检查统计口令和 Supabase 配置。"} 也可以先上传成绩 CSV。`);
+    }
+  }
+
   function showEmptyStructure() {
     const sample = [{
       name: "示例学生",
@@ -143,78 +260,52 @@
     setStatus("已显示示例统计结构。");
   }
 
-  function recordsFromRows(rows) {
-    const headers = rows[0].map(normalizeHeader);
-    return rows.slice(1).map((row) => {
-      const record = {};
-      headers.forEach((header, index) => {
-        record[header] = row[index] || "";
-      });
-      return record;
-    });
-  }
-
-  function recordsFromRemoteRows(data) {
-    if (!Array.isArray(data.rows) || !Array.isArray(data.headers)) return [];
-    const rows = [data.headers, ...data.rows];
-    return recordsFromRows(rows);
-  }
-
-  function attemptsFromRecords(records) {
-    const attempts = records.map(normalizeAttempt).filter(Boolean);
-    return filterAttemptsByQuestionSet(attempts);
-  }
-
-  function filterAttemptsByQuestionSet(attempts) {
-    if (!selectedQuestionSet.explicit || !selectedQuestionSet.id) return attempts;
-    const selectedSetId = normalizeSetId(selectedQuestionSet.id);
-    const selectedTitle = normalizeComparable(selectedQuizTitle);
-    const filtered = attempts.filter((attempt) => {
-      const attemptSet = normalizeSetId(attempt.questionSet);
-      const attemptTitle = normalizeComparable(attempt.quizTitle);
-      return attemptSet === selectedSetId || (selectedTitle && attemptTitle === selectedTitle);
-    });
-    return filtered;
-  }
-
   function normalizeAttempt(record) {
     const payload = parseJsonObject(getField(record, ["payload", "原始数据", "提交数据"]));
+    const summaryPayload = parseSummaryText(getField(record, ["成绩摘要", "提交内容", "复制内容", "摘要", "summary", "content"]));
     const student = payload && payload.student ? payload.student : {};
+    const rawAnswers = getField(record, ["answers_json", "answers", "答题", "作答记录"]);
     const answers = normalizeAnswers(
       Array.isArray(payload && payload.answers)
         ? payload.answers
-        : parseJsonArray(getField(record, ["answers_json", "answers", "答题", "作答记录"]))
+        : summaryPayload.answers.length
+          ? summaryPayload.answers
+          : Array.isArray(rawAnswers)
+            ? rawAnswers
+            : parseJsonArray(rawAnswers)
     );
 
     const scoreFromRecord = numberField(record, ["score", "成绩", "得分"]);
     const scoreFromPayload = payload ? Number(payload.score) : NaN;
+    const scoreFromSummary = Number(summaryPayload.score);
     const scoreFromAnswers = answers.length ? answers.reduce((sum, answer) => sum + Number(answer.score || 0), 0) : NaN;
-    const score = firstFinite(scoreFromRecord, scoreFromPayload, scoreFromAnswers);
+    const score = firstFinite(scoreFromRecord, scoreFromPayload, scoreFromSummary, scoreFromAnswers);
 
     const totalFromQuestions = questions.length ? questions.reduce((sum, question) => sum + Number(question.score || 1), 0) : NaN;
     const totalFromAnswers = answers.length ? answers.reduce((sum, answer) => sum + Number(answer.maxScore || 1), 0) : NaN;
-    const total = firstFinite(numberField(record, ["total", "满分", "总分"]), payload ? Number(payload.total) : NaN, totalFromQuestions, totalFromAnswers);
+    const total = firstFinite(numberField(record, ["total", "满分", "总分"]), payload ? Number(payload.total) : NaN, Number(summaryPayload.total), totalFromQuestions, totalFromAnswers);
     const correctCount = firstFinite(
       numberField(record, ["correct", "correctcount", "正确", "正确数"]),
       payload ? Number(payload.correctCount) : NaN,
+      Number(summaryPayload.correctCount),
       answers.length ? answers.filter((answer) => answer.isCorrect).length : NaN
     );
-    const questionCount = firstFinite(numberField(record, ["questions", "questioncount", "题数"]), payload ? Number(payload.questionCount) : NaN, questions.length || NaN, answers.length || NaN);
+    const questionCount = firstFinite(numberField(record, ["questions", "questioncount", "题数"]), payload ? Number(payload.questionCount) : NaN, Number(summaryPayload.questionCount), questions.length || NaN, answers.length || NaN);
 
     if (!answers.length && !Number.isFinite(score)) return null;
 
     return {
-      quizTitle: getField(record, ["quiz", "quiztitle", "试卷", "测验"]) || (payload && payload.quizTitle) || "",
-      questionSet: getField(record, ["question_set", "questionset", "set", "卷别"]) || (payload && payload.questionSet) || "",
-      name: getField(record, ["name", "姓名"]) || student.name || "-",
-      className: getField(record, ["class", "className", "班级"]) || student.className || "-",
-      studentId: getField(record, ["student_id", "studentid", "学号"]) || student.studentId || "-",
+      quizTitle: getField(record, ["quiz", "quiztitle", "试卷", "测验"]) || (payload && payload.quizTitle) || summaryPayload.quizTitle || "",
+      questionSet: getField(record, ["question_set", "questionset", "set", "卷别", "章节编号"]) || (payload && payload.questionSet) || summaryPayload.questionSet || "",
+      name: getField(record, ["name", "姓名"]) || student.name || summaryPayload.name || "-",
+      className: getField(record, ["class", "className", "class_name", "班级"]) || student.className || "-",
+      studentId: getField(record, ["student_id", "studentid", "学号"]) || student.studentId || summaryPayload.studentId || "-",
       score: Number.isFinite(score) ? score : 0,
       total,
       percent: firstFinite(numberField(record, ["percent", "百分比"]), payload ? Number(payload.percent) : NaN, total ? Math.round((score / total) * 100) : 0),
       correctCount: Number.isFinite(correctCount) ? correctCount : 0,
       questionCount,
-      durationSeconds: firstFinite(numberField(record, ["duration_seconds", "durationseconds", "用时"]), payload ? Number(payload.durationSeconds) : NaN, 0),
+      durationSeconds: firstFinite(numberField(record, ["duration_seconds", "durationseconds", "用时"]), payload ? Number(payload.durationSeconds) : NaN, Number(summaryPayload.durationSeconds), 0),
       submittedAt: getField(record, ["submitted_at", "submittedat", "提交时间"]) || (payload && payload.endedAt) || "",
       answers
     };
@@ -240,9 +331,12 @@
 
     renderScoreBars(attempts, maxTotal);
     renderStudentTable(attempts);
-    renderQuestionStats(attempts);
+    const questionStats = computeQuestionStats(attempts);
+    renderWrongRank(questionStats);
+    renderQuestionStats(questionStats);
 
     elements.statsPanels.hidden = false;
+    elements.wrongRankPanel.hidden = false;
     elements.questionStatsPanel.hidden = false;
     setStatus(`已统计 ${totalStudents} 份提交。`);
     typeset();
@@ -277,7 +371,6 @@
     elements.studentTableBody.innerHTML = sorted.map((attempt) => `
       <tr>
         <td>${escapeHtml(attempt.name)}</td>
-        <td>${escapeHtml(attempt.className)}</td>
         <td>${escapeHtml(attempt.studentId)}</td>
         <td>${attempt.score}/${attempt.total}</td>
         <td>${attempt.correctCount}/${attempt.questionCount}</td>
@@ -286,7 +379,7 @@
     `).join("");
   }
 
-  function renderQuestionStats(attempts) {
+  function computeQuestionStats(attempts) {
     const questionMap = new Map(questions.map((question, index) => [question.id, { ...question, index }]));
     const fallbackCount = Math.max(questions.length, ...attempts.map((attempt) => attempt.answers.length));
     const stats = Array.from({ length: fallbackCount }, (_, index) => {
@@ -316,6 +409,42 @@
       });
     });
 
+    return stats;
+  }
+
+  function renderWrongRank(stats) {
+    const ranked = stats
+      .filter((item) => item.total > 0)
+      .map((item) => ({
+        ...item,
+        wrong: item.total - item.correct,
+        wrongRate: item.total ? Math.round(((item.total - item.correct) / item.total) * 100) : 0
+      }))
+      .sort((a, b) => b.wrongRate - a.wrongRate || b.wrong - a.wrong || a.index - b.index)
+      .slice(0, 10);
+
+    elements.wrongRank.innerHTML = ranked.map((item) => {
+      const optionText = Object.entries(item.options)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([option, count]) => `${escapeHtml(option)}: ${count}`)
+        .join(" · ") || "-";
+      return `
+        <article class="question-stat wrong-rank-item">
+          <div class="question-stat-title">
+            <strong>${item.index + 1}. ${escapeHtml(item.prompt)}</strong>
+            <span>错 ${item.wrong}/${item.total} · ${item.wrongRate}%</span>
+          </div>
+          <div class="question-rate wrong-rate"><i style="width:${item.wrongRate}%"></i></div>
+          <div class="question-stat-meta">
+            <span>答案 ${escapeHtml(item.answer || "-")}</span>
+            <span>${optionText}</span>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function renderQuestionStats(stats) {
     elements.questionStats.innerHTML = stats.map((item) => {
       const rate = item.total ? Math.round((item.correct / item.total) * 100) : 0;
       const optionText = Object.entries(item.options)
@@ -415,7 +544,7 @@
       };
       script.onerror = () => {
         cleanup();
-        reject(new Error("自动读取失败，请检查 Web App 是否已重新部署。"));
+        reject(new Error("自动读取失败，请检查自动读取服务是否可用。"));
       };
       script.src = url.toString();
       document.head.append(script);
@@ -424,6 +553,7 @@
 
   function parseJsonObject(value) {
     if (!value) return null;
+    if (typeof value === "object" && !Array.isArray(value)) return value;
     try {
       const parsed = JSON.parse(value);
       return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
@@ -434,12 +564,82 @@
 
   function parseJsonArray(value) {
     if (!value) return [];
+    if (Array.isArray(value)) return value;
     try {
       const parsed = JSON.parse(value);
       return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
       return [];
     }
+  }
+
+  function parseSummaryText(value) {
+    const text = String(value || "").trim();
+    const result = {
+      quizTitle: "",
+      questionSet: "",
+      name: "",
+      studentId: "",
+      score: NaN,
+      total: NaN,
+      correctCount: NaN,
+      questionCount: NaN,
+      durationSeconds: NaN,
+      answers: []
+    };
+    if (!text) return result;
+
+    text.split(/\r?\n/).forEach((line) => {
+      const index = line.indexOf("：");
+      if (index < 0) return;
+      const key = line.slice(0, index).trim();
+      const val = line.slice(index + 1).trim();
+      if (key === "试卷") result.quizTitle = val;
+      if (key === "章节编号") result.questionSet = val === "-" ? "" : val;
+      if (key === "姓名") result.name = val;
+      if (key === "学号") result.studentId = val === "-" ? "" : val;
+      if (key === "成绩") {
+        const match = val.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+        if (match) {
+          result.score = Number(match[1]);
+          result.total = Number(match[2]);
+        }
+      }
+      if (key === "正确") {
+        const match = val.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+        if (match) {
+          result.correctCount = Number(match[1]);
+          result.questionCount = Number(match[2]);
+        }
+      }
+      if (key === "用时") result.durationSeconds = durationTextToSeconds(val);
+      if (key === "机器码") result.answers = parseCompactAnswers(val);
+    });
+
+    return result;
+  }
+
+  function parseCompactAnswers(value) {
+    if (!value) return [];
+    return String(value).split(";")
+      .filter(Boolean)
+      .map((item) => {
+        const parts = item.split(":");
+        return {
+          id: parts[0] || "",
+          selected: parts[1] || "",
+          correct: parts[2] || "",
+          isCorrect: parts[3] === "1",
+          score: Number(parts[4] || 0),
+          maxScore: Number(parts[5] || 1)
+        };
+      });
+  }
+
+  function durationTextToSeconds(value) {
+    const text = String(value || "");
+    const match = text.match(/(\d+)分(\d+)秒/);
+    return match ? Number(match[1]) * 60 + Number(match[2]) : NaN;
   }
 
   function normalizeAnswers(answers) {
@@ -478,7 +678,9 @@
   }
 
   function numberField(record, names) {
-    const value = Number(getField(record, names));
+    const raw = getField(record, names);
+    if (raw === "") return NaN;
+    const value = Number(raw);
     return Number.isFinite(value) ? value : NaN;
   }
 
@@ -538,6 +740,20 @@
 
   function setStatus(message) {
     elements.statsStatus.textContent = message;
+  }
+
+  function hasRemoteStatsSource() {
+    return Boolean(statsEndpoint || hasSupabaseStatsSource());
+  }
+
+  function hasSupabaseStatsSource() {
+    const provider = String(settings.statsProvider || settings.submitProvider || "").trim().toLowerCase();
+    const wantsSupabase = provider === "supabase" || Boolean(settings.supabaseUrl || settings.supabaseAnonKey);
+    return Boolean(wantsSupabase && statsRpcName && String(settings.supabaseUrl || "").trim() && String(settings.supabaseAnonKey || "").trim());
+  }
+
+  function normalizeSupabaseUrl() {
+    return String(settings.supabaseUrl || "").trim().replace(/\/+$/, "");
   }
 
   function refreshIcons() {

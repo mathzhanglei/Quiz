@@ -6,6 +6,9 @@
     shuffleQuestions: false,
     shuffleOptions: false,
     showCorrectAnswers: true,
+    submitProvider: "",
+    supabaseUrl: "",
+    supabaseAnonKey: "",
     submitEndpoint: "",
     ...(config.settings || {})
   };
@@ -566,24 +569,61 @@
   function sendResult() {
     if (state.viewingHistory) return;
 
+    const payload = buildPayload();
+    if (wantsSupabaseSubmit()) {
+      if (!isSupabaseConfigured()) {
+        elements.submitStatus.textContent = elements.submitStatus.textContent || "Supabase 还没有配置，成绩已在本机生成。";
+        return;
+      }
+
+      elements.submitStatus.textContent = "正在提交成绩...";
+      submitSupabaseResult(payload)
+        .then(() => {
+          elements.submitStatus.textContent = "成绩已提交到 Supabase。";
+        })
+        .catch((error) => {
+          elements.submitStatus.textContent = `成绩提交失败：${error.message || "请检查 Supabase 配置和网络。"} 可先下载成绩文件或复制提交内容交给老师。`;
+        });
+      return;
+    }
+
     const endpoint = String(settings.submitEndpoint || "").trim();
     if (!endpoint) {
       elements.submitStatus.textContent = elements.submitStatus.textContent || "成绩已在本机生成。";
       return;
     }
 
-    const payload = buildPayload();
     elements.submitStatus.textContent = "正在提交成绩...";
     submitResult(endpoint, payload)
       .then((data) => {
         if (!data || data.ok !== true || data.saved !== true) {
-          throw new Error(data && data.error ? data.error : "收集端没有确认写入，请检查 Apps Script 是否已更新部署。");
+          throw new Error(data && data.error ? data.error : "收集端没有确认写入，请检查收集服务。");
         }
         elements.submitStatus.textContent = "成绩已提交到收集表。";
       })
       .catch((error) => {
-        elements.submitStatus.textContent = `成绩提交失败：${error.message || "请检查网络或收集脚本部署。"} 可先导出结果后交给老师。`;
-      });
+        elements.submitStatus.textContent = `成绩提交失败：${error.message || "请检查网络或收集脚本部署。"} 可先下载成绩文件或复制提交内容交给老师。`;
+    });
+  }
+
+  async function submitSupabaseResult(payload) {
+    const response = await fetch(`${normalizeSupabaseUrl()}/rest/v1/quiz_results`, {
+      method: "POST",
+      headers: {
+        apikey: settings.supabaseAnonKey.trim(),
+        Authorization: `Bearer ${settings.supabaseAnonKey.trim()}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal"
+      },
+      body: JSON.stringify(supabaseRecordFromPayload(payload))
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || `HTTP ${response.status}`);
+    }
+
+    return { ok: true, saved: true };
   }
 
   function submitResult(endpoint, payload) {
@@ -619,6 +659,40 @@
       script.src = url.toString();
       document.head.append(script);
     });
+  }
+
+  function wantsSupabaseSubmit() {
+    const provider = String(settings.submitProvider || "").trim().toLowerCase();
+    return provider === "supabase" || Boolean(settings.supabaseUrl || settings.supabaseAnonKey);
+  }
+
+  function isSupabaseConfigured() {
+    return Boolean(String(settings.supabaseUrl || "").trim() && String(settings.supabaseAnonKey || "").trim());
+  }
+
+  function normalizeSupabaseUrl() {
+    return String(settings.supabaseUrl || "").trim().replace(/\/+$/, "");
+  }
+
+  function supabaseRecordFromPayload(payload) {
+    return {
+      submitted_at: new Date().toISOString(),
+      quiz: payload.quizTitle,
+      question_set: payload.questionSet,
+      course: payload.course,
+      name: payload.student.name,
+      class: payload.student.className,
+      student_id: payload.student.studentId,
+      score: payload.score,
+      total: payload.total,
+      percent: payload.percent,
+      correct: payload.correctCount,
+      questions: payload.questionCount,
+      started_at: payload.startedAt,
+      ended_at: payload.endedAt,
+      duration_seconds: payload.durationSeconds,
+      answers_json: payload.answers
+    };
   }
 
   function compactPayload(payload) {
@@ -791,9 +865,17 @@
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${sanitizeFileName(payload.student.name || "result")}-${Date.now()}.csv`;
+    anchor.download = resultFileName(payload);
     anchor.click();
     URL.revokeObjectURL(url);
+  }
+
+  function resultFileName(payload) {
+    const setName = selectedQuestionSet.label || payload.questionSet || "测验";
+    const name = payload.student.name || "未命名";
+    const studentId = payload.student.studentId || "无学号";
+    const stamp = formatFileDate(new Date());
+    return sanitizeFileName(`${setName}-${name}-${studentId}-${stamp}.csv`);
   }
 
   function csvCell(value) {
@@ -805,9 +887,14 @@
     return value.replace(/[\\/:*?"<>|]/g, "_");
   }
 
+  function formatFileDate(date) {
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
+  }
+
   function copySummary() {
     navigator.clipboard.writeText(summaryText()).then(() => {
-      elements.submitStatus.textContent = "摘要已复制。";
+      elements.submitStatus.textContent = "提交内容已复制，请粘贴到老师指定的收集表。";
     });
   }
 
@@ -818,7 +905,10 @@
       .join(" ");
 
     return [
-      `${payload.quizTitle}`,
+      "QUIZ_RESULT_V1",
+      `试卷：${payload.quizTitle}`,
+      `章节：${selectedQuestionSet.label || payload.questionSet || "-"}`,
+      `章节编号：${payload.questionSet || "-"}`,
       `姓名：${payload.student.name}`,
       `学号：${payload.student.studentId || "-"}`,
       `成绩：${payload.score}/${payload.total}`,
@@ -826,8 +916,20 @@
       `用时：${formatDuration(payload.durationSeconds)}`,
       `开始：${payload.startedAt}`,
       `交卷：${payload.endedAt}`,
-      `答题：${answers}`
+      `答题：${answers}`,
+      `机器码：${compactAnswers(payload.answers)}`
     ].join("\n");
+  }
+
+  function compactAnswers(answers) {
+    return answers.map((answer) => [
+      answer.id,
+      answer.selected || "",
+      answer.correct || "",
+      answer.isCorrect ? "1" : "0",
+      answer.score,
+      answer.maxScore
+    ].join(":")).join(";");
   }
 
   function formatDuration(seconds) {

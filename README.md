@@ -49,6 +49,8 @@ q1,"设 $f(x)=x^2+3x$，则 $f'(x)$ 等于？",$x+3$,$2x+3$,$x^2+3$,$2x$,B,5,是
 - `settings.shuffleQuestions`：是否打乱题目
 - `settings.shuffleOptions`：是否打乱选项
 - `settings.showCorrectAnswers`：交卷后是否显示正确答案
+- `settings.supabaseUrl`：Supabase 项目的 Project URL
+- `settings.supabaseAnonKey`：Supabase 项目的 anon public key
 
 答案可以写 `"A"`、`"B"`、`"C"`，也可以写选项下标。建议用字母。
 
@@ -96,20 +98,81 @@ questionSets: {
 6. 等 GitHub 给出 Pages 地址
 7. 把地址生成二维码，学生用微信扫码打开
 
-## 收集成绩
+## Supabase 后台
 
-GitHub Pages 自己不能保存提交结果。当前页面提供两种本地结果交付方式：
+GitHub Pages 自己不能保存提交结果。推荐用 Supabase 做后台：学生交卷后自动写入 `quiz_results` 表，老师打开统计页输入统计口令即可自动读取错题排行。
 
-1. 学生交卷后点击「导出结果」，生成个人 CSV 成绩文件
-2. 学生交卷后点击「复制摘要」，把姓名、学号、分数、用时和逐题作答记录复制出来
+### 1. 建表
 
-如果要集中汇总全班成绩，可以让学生提交导出的 CSV 文件，或把复制摘要粘贴到老师指定的收集入口。
+在 Supabase 新建项目后，进入 `SQL Editor`，把 `supabase/schema.sql` 的内容整段粘贴进去运行一次。
+
+然后把统计口令改成自己的：
+
+```sql
+update public.quiz_settings
+   set value = '这里换成你的统计口令', updated_at = now()
+ where key = 'stats_token';
+```
+
+这个口令只给老师自己用，不发给学生。
+
+### 2. 填配置
+
+在 Supabase 的 `Project Settings` → `API` 里复制：
+
+- `Project URL`
+- `anon public key`
+
+填到 `questions.js`：
+
+```js
+settings: {
+  submitProvider: "supabase",
+  supabaseUrl: "https://你的项目编号.supabase.co",
+  supabaseAnonKey: "你的 anon public key",
+  statsProvider: "supabase",
+  statsRpcName: "quiz_results_for_stats"
+}
+```
+
+`anon public key` 可以放在网页里。数据库已经开启 RLS，匿名访问只能新增成绩，不能直接读取全班成绩。
+
+### 3. 测试
+
+1. 打开考试页，随便用一个测试姓名交卷
+2. 回到 Supabase 的 `Table Editor` → `quiz_results`，应该能看到一行新记录
+3. 打开 `stats.html?set=chapter3` 或 `stats.html?set=chapter4`
+4. 输入刚才设置的统计口令，点击「自动读取」
+
+## 本地备用提交
+
+如果学生网络临时连不上 Supabase，页面仍然提供两种本地结果交付方式：
+
+1. 学生交卷后点击「下载成绩文件」，生成个人 CSV 成绩文件
+2. 学生交卷后点击「复制提交内容」，把姓名、学号、分数、用时和逐题作答记录复制出来
+
+老师可以把这些 CSV 文件拖进 `stats.html` 做统计。
+
+## 腾讯文档收集（备用）
+
+推荐建一个收集表，字段如下：
+
+```text
+姓名
+学号
+章节
+成绩摘要
+```
+
+其中 `成绩摘要` 用多行文本。学生交卷后点击「复制提交内容」，把复制出来的内容粘贴到 `成绩摘要`，然后提交收集表。
+
+老师从腾讯文档导出 CSV 后，打开 `stats.html` 选择该 CSV，即可看到提交人数、学生成绩和错题排行。
 
 ## 老师统计
 
-打开 `stats.html` 可以统计全班答题情况。把成绩表的 `Results` 工作表导出为 CSV，然后在统计页选择该 CSV 文件。统计页会显示提交人数、平均分、分数分布、学生成绩表、每题正确率和每题选项分布。
+打开 `stats.html` 可以统计全班答题情况。配置 Supabase 后，输入统计口令并点击「自动读取」，统计页会显示提交人数、平均分、分数分布、学生成绩表、错题排行、每题正确率和每题选项分布。
 
-如果要免下载上传，可以在收集脚本里设置 `STATS_TOKEN` 并重新部署 Web App。之后老师打开 `stats.html`，输入统计口令，点击「自动读取」即可直接统计 `Results` 里的提交记录。CSV 上传仍保留为备用方式。
+CSV 上传仍保留为备用方式：从 Supabase 或其他收集入口导出 CSV 后，在统计页选择该 CSV 文件即可。
 
 ## 学生回看
 

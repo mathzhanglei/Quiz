@@ -684,6 +684,14 @@ button svg,
   border-radius: inherit;
 }
 
+.wrong-rate i {
+  background: var(--danger);
+}
+
+.wrong-rank-item {
+  border-left: 4px solid var(--danger);
+}
+
 .student-table-wrap {
   overflow-x: auto;
 }
