@@ -13,7 +13,7 @@
     ...(config.settings || {})
   };
   const questionSets = config.questionSets || baseSettings.questionSets || {};
-  const selectedQuestionSet = resolveQuestionSet(questionSets, baseSettings.defaultSet || "default");
+  const selectedQuestionSet = resolveQuestionSet(questionSets, baseSettings.defaultSet || "default", baseSettings);
   const meta = {
     ...baseMeta,
     ...(selectedQuestionSet.meta || {})
@@ -998,20 +998,57 @@
     });
   }
 
-  function resolveQuestionSet(questionSets, defaultSet) {
+  function resolveQuestionSet(questionSets, defaultSet, settingsForSets) {
     const params = new URLSearchParams(window.location.search);
-    const requested = params.get("set") || params.get("paper") || defaultSet || "";
+    const requested = String(params.get("set") || params.get("paper") || defaultSet || "").trim();
+    const explicit = Boolean(params.get("set") || params.get("paper"));
     const setIds = Object.keys(questionSets || {});
-    if (!setIds.length) return { id: "" };
+    if (!setIds.length && !explicit) return { id: "" };
 
     const exactId = setIds.find((id) => id === requested);
     const normalizedId = setIds.find((id) => normalizeSetId(id) === normalizeSetId(requested));
+    if (exactId || normalizedId) {
+      const id = exactId || normalizedId;
+      return {
+        id,
+        explicit,
+        ...(questionSets[id] || {})
+      };
+    }
+
+    if (explicit && isSafeSetId(requested)) {
+      return autoQuestionSet(requested, settingsForSets, explicit);
+    }
+
     const fallbackId = setIds.includes(defaultSet) ? defaultSet : setIds[0];
-    const id = exactId || normalizedId || fallbackId;
+    if (!fallbackId) return { id: "", explicit };
     return {
-      id,
-      ...(questionSets[id] || {})
+      id: fallbackId,
+      explicit,
+      ...(questionSets[fallbackId] || {})
     };
+  }
+
+  function autoQuestionSet(setId, settingsForSets, explicit) {
+    const rules = settingsForSets || {};
+    const label = fillSetPattern(rules.autoQuestionSetLabelPattern || "第{set}套", setId);
+    return {
+      id: setId,
+      explicit,
+      label,
+      title: fillSetPattern(rules.autoQuestionSetTitlePattern || "第{set}套在线练习", setId, label),
+      questionSource: fillSetPattern(rules.autoQuestionSetPattern || "./question-sets/questions-{set}.csv", setId, label)
+    };
+  }
+
+  function fillSetPattern(pattern, setId, label) {
+    return String(pattern || "")
+      .replaceAll("{set}", setId)
+      .replaceAll("{label}", label || setId);
+  }
+
+  function isSafeSetId(value) {
+    return /^[A-Za-z0-9_-]+$/.test(String(value || ""));
   }
 
   function normalizeSetId(value) {

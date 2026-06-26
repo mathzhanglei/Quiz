@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>答题统计</title>
-    <link rel="stylesheet" href="./styles.css?v=20260626-supabase-fix2" />
+    <link rel="stylesheet" href="./styles.css?v=20260626-qr-index" />
     <script>
       window.MathJax = {
         tex: {
@@ -19,8 +19,8 @@
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
     <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script defer src="./questions.js?v=20260626-supabase-fix2"></script>
-    <script defer src="./stats.js?v=20260626-supabase-fix2"></script>
+    <script defer src="./questions.js?v=20260626-question-folder"></script>
+    <script defer src="./stats.js?v=20260626-question-folder"></script>
   </head>
   <body>
     <main class="app-shell stats-shell">
@@ -30,6 +30,10 @@
           <h1>答题统计</h1>
         </div>
         <div class="topbar-actions">
+          <a class="ghost link-button" href="./qrcodes.html">
+            <i data-lucide="qr-code"></i>
+            二维码
+          </a>
           <a class="ghost link-button" href="./index.html">
             <i data-lucide="arrow-left"></i>
             返回考试
@@ -53,6 +57,10 @@
         <button class="secondary" id="loadSampleButton" type="button">
           <i data-lucide="file-search"></i>
           读取示例结构
+        </button>
+        <button class="danger-button" id="clearSetButton" type="button">
+          <i data-lucide="trash-2"></i>
+          清空本章
         </button>
         <p class="source-status" id="statsStatus">等待选择成绩 CSV。</p>
       </section>

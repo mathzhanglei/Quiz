@@ -50,7 +50,7 @@ alter table public.quiz_settings enable row level security;
 revoke all on table public.quiz_settings from anon, authenticated;
 
 insert into public.quiz_settings (key, value)
-values ('stats_token', 'Lei123')
+values ('stats_token', 'change-me')
 on conflict (key) do nothing;
 
 create or replace function public.quiz_results_for_stats(p_token text)
@@ -86,7 +86,7 @@ begin
    where key = 'stats_token';
 
   if expected_token is null
-     or expected_token = 'Lei123'
+     or expected_token = 'change-me'
      or p_token is null
      or p_token <> expected_token then
     raise exception 'invalid stats token';
@@ -119,7 +119,55 @@ $$;
 revoke all on function public.quiz_results_for_stats(text) from public;
 grant execute on function public.quiz_results_for_stats(text) to anon;
 
+create or replace function public.quiz_clear_results_for_set(
+  p_token text,
+  p_question_set text
+)
+returns table (
+  deleted_count integer
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  expected_token text;
+  target_set text;
+  deleted integer;
+begin
+  select value
+    into expected_token
+    from public.quiz_settings
+   where key = 'stats_token';
+
+  target_set := nullif(btrim(p_question_set), '');
+
+  if expected_token is null
+     or expected_token = 'change-me'
+     or p_token is null
+     or p_token <> expected_token then
+    raise exception 'invalid stats token';
+  end if;
+
+  if target_set is null then
+    raise exception 'missing question set';
+  end if;
+
+  delete from public.quiz_results
+   where question_set = target_set;
+
+  get diagnostics deleted = row_count;
+
+  return query select deleted;
+end;
+$$;
+
+revoke all on function public.quiz_clear_results_for_set(text, text) from public;
+grant execute on function public.quiz_clear_results_for_set(text, text) to anon;
+
 -- Run this after changing the token below to your own teacher password.
-update public.quiz_settings
-    set value = 'Lei123', updated_at = now()
-  where key = 'stats_token';
+-- insert into public.quiz_settings (key, value)
+-- values ('stats_token', 'your-teacher-stats-token')
+-- on conflict (key) do update
+--    set value = excluded.value,
+--        updated_at = now();

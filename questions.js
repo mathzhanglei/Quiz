@@ -7,8 +7,11 @@ window.QUIZ_CONFIG = {
     instructions: "欢迎参加本次在线考试。请注意以下事项：\n· 在考试过程中，请确保网络连接稳定，以免影响考试。\n· 请在规定时间内完成考试，超时将无法提交答案。\n· 考试过程中，请勿抄袭或作弊，否则将取消考试成绩。\n· 如有任何疑问，请联系考试管理员。祝您考试顺利！"
   },
   settings: {
-    questionSource: "./questions.csv",
+    questionSource: "./question-sets/questions.csv",
     defaultSet: "default",
+    autoQuestionSetPattern: "./question-sets/questions-{set}.csv",
+    autoQuestionSetLabelPattern: "第{set}套",
+    autoQuestionSetTitlePattern: "复变函数第{set}套在线练习",
     shuffleQuestions: false,
     shuffleOptions: false,
     showCorrectAnswers: true,
@@ -17,23 +20,24 @@ window.QUIZ_CONFIG = {
     supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a2dxZ29oc3VlcnBmamplYmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MTUyNjYsImV4cCI6MjA5Nzk5MTI2Nn0.UBmi56QRPQIzGZ2_HmWkM3ISI3mdGXhATCJ1Q93nz4k",
     statsProvider: "supabase",
     statsRpcName: "quiz_results_for_stats",
+    clearRpcName: "quiz_clear_results_for_set",
     submitEndpoint: ""
   },
   questionSets: {
     default: {
       label: "默认",
       title: "复变函数基础在线考试",
-      questionSource: "./questions.csv"
+      questionSource: "./question-sets/questions.csv"
     },
     chapter3: {
       label: "第三章",
       title: "复变函数第三章在线练习",
-      questionSource: "./questions-chapter3.csv"
+      questionSource: "./question-sets/questions-chapter3.csv"
     },
     chapter4: {
       label: "第四章",
       title: "复变函数第四章在线练习",
-      questionSource: "./questions-chapter4.csv"
+      questionSource: "./question-sets/questions-chapter4.csv"
     }
   },
   questions: []

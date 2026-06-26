@@ -2,16 +2,17 @@
   const config = window.QUIZ_CONFIG || {};
   const baseSettings = config.settings || {};
   const questionSets = config.questionSets || baseSettings.questionSets || {};
-  const selectedQuestionSet = resolveQuestionSet(questionSets, baseSettings.defaultSet || "default");
+  const selectedQuestionSet = resolveQuestionSet(questionSets, baseSettings.defaultSet || "default", baseSettings);
   const settings = {
     ...baseSettings,
     ...(selectedQuestionSet.settings || {})
   };
   if (selectedQuestionSet.questionSource) settings.questionSource = selectedQuestionSet.questionSource;
-  const questionSource = settings.questionSource || "./questions.csv";
+  const questionSource = settings.questionSource || "./question-sets/questions.csv";
   const selectedQuizTitle = selectedQuestionSet.title || (selectedQuestionSet.meta && selectedQuestionSet.meta.title) || (config.meta && config.meta.title) || "";
   const statsEndpoint = String(settings.statsEndpoint || "").trim();
   const statsRpcName = String(settings.statsRpcName || "quiz_results_for_stats").trim();
+  const clearRpcName = String(settings.clearRpcName || "quiz_clear_results_for_set").trim();
   const statsTokenKey = "texQuizStatsToken";
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   let questions = [];
@@ -22,6 +23,7 @@
     statsToken: $("statsToken"),
     loadRemoteButton: $("loadRemoteButton"),
     loadSampleButton: $("loadSampleButton"),
+    clearSetButton: $("clearSetButton"),
     statsStatus: $("statsStatus"),
     summaryGrid: $("summaryGrid"),
     statsPanels: $("statsPanels"),
@@ -38,6 +40,7 @@
     elements.resultsFile.addEventListener("change", handleFile);
     elements.loadRemoteButton.addEventListener("click", loadRemoteResults);
     elements.loadSampleButton.addEventListener("click", showEmptyStructure);
+    elements.clearSetButton.addEventListener("click", clearCurrentSetResults);
     await loadQuestions();
     setupRemoteControls();
   }
@@ -48,6 +51,7 @@
     const savedToken = localStorage.getItem(statsTokenKey) || "";
     elements.statsToken.value = tokenFromUrl || savedToken;
     elements.loadRemoteButton.disabled = !hasRemoteStatsSource();
+    elements.clearSetButton.disabled = !hasSupabaseStatsSource() || !selectedQuestionSet.id;
     if (!hasRemoteStatsSource()) {
       setStatus("没有配置自动读取地址，可上传成绩 CSV。");
     }
@@ -235,6 +239,66 @@
     }
   }
 
+  async function clearCurrentSetResults() {
+    if (!hasSupabaseStatsSource()) {
+      setStatus("没有配置 Supabase，无法清空后台数据。");
+      return;
+    }
+
+    const token = elements.statsToken.value.trim();
+    if (!token) {
+      setStatus("请输入统计口令。");
+      return;
+    }
+
+    const setId = selectedQuestionSet.id || "";
+    if (!setId) {
+      setStatus("没有识别到当前章节编号，不能清空。");
+      return;
+    }
+
+    const setLabel = selectedQuestionSet.label || setId;
+    const confirmText = `清空${setLabel}`;
+    const typed = window.prompt(`将删除 ${setLabel} 的所有提交数据，不能撤销。\n请输入“${confirmText}”确认：`);
+    if (typed !== confirmText) {
+      setStatus("已取消清空。");
+      return;
+    }
+
+    localStorage.setItem(statsTokenKey, token);
+    elements.clearSetButton.disabled = true;
+    setStatus(`正在清空 ${setLabel} 的提交数据...`);
+
+    try {
+      const response = await fetch(`${normalizeSupabaseUrl()}/rest/v1/rpc/${encodeURIComponent(clearRpcName)}`, {
+        method: "POST",
+        headers: {
+          apikey: String(settings.supabaseAnonKey || "").trim(),
+          Authorization: `Bearer ${String(settings.supabaseAnonKey || "").trim()}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          p_token: token,
+          p_question_set: setId
+        })
+      });
+
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(readableSupabaseError(detail) || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const deletedCount = deletedCountFromRpc(data);
+      clearStatsView();
+      setStatus(`已清空 ${setLabel} 的 ${deletedCount} 份提交。`);
+    } catch (error) {
+      setStatus(`清空失败：${error.message || "请检查统计口令和 Supabase 函数。"} `);
+    } finally {
+      elements.clearSetButton.disabled = !hasSupabaseStatsSource() || !selectedQuestionSet.id;
+    }
+  }
+
   function showEmptyStructure() {
     const sample = [{
       name: "示例学生",
@@ -341,6 +405,18 @@
     setStatus(`已统计 ${totalStudents} 份提交。`);
     typeset();
     refreshIcons();
+  }
+
+  function clearStatsView() {
+    elements.summaryGrid.hidden = true;
+    elements.summaryGrid.innerHTML = "";
+    elements.statsPanels.hidden = true;
+    elements.scoreBars.innerHTML = "";
+    elements.studentTableBody.innerHTML = "";
+    elements.wrongRankPanel.hidden = true;
+    elements.wrongRank.innerHTML = "";
+    elements.questionStatsPanel.hidden = true;
+    elements.questionStats.innerHTML = "";
   }
 
   function renderScoreBars(attempts, total) {
@@ -577,7 +653,17 @@
     const parsed = parseJsonObject(detail);
     const message = parsed && parsed.message ? String(parsed.message) : String(detail || "");
     if (message.includes("invalid stats token")) return "统计口令不正确，或 Supabase 里还没有把默认口令改掉。";
+    if (message.includes("missing question set")) return "没有传入章节编号，未清空。";
     return message;
+  }
+
+  function deletedCountFromRpc(data) {
+    if (typeof data === "number") return data;
+    if (Array.isArray(data) && data[0] && Number.isFinite(Number(data[0].deleted_count))) {
+      return Number(data[0].deleted_count);
+    }
+    if (data && Number.isFinite(Number(data.deleted_count))) return Number(data.deleted_count);
+    return 0;
   }
 
   function parseSummaryText(value) {
@@ -776,22 +862,57 @@
     }
   }
 
-  function resolveQuestionSet(questionSets, defaultSet) {
+  function resolveQuestionSet(questionSets, defaultSet, settingsForSets) {
     const params = new URLSearchParams(window.location.search);
-    const requested = params.get("set") || params.get("paper") || defaultSet || "";
+    const requested = String(params.get("set") || params.get("paper") || defaultSet || "").trim();
     const explicit = Boolean(params.get("set") || params.get("paper"));
     const setIds = Object.keys(questionSets || {});
-    if (!setIds.length) return { id: "", explicit };
+    if (!setIds.length && !explicit) return { id: "", explicit };
 
     const exactId = setIds.find((id) => id === requested);
     const normalizedId = setIds.find((id) => normalizeSetId(id) === normalizeSetId(requested));
+    if (exactId || normalizedId) {
+      const id = exactId || normalizedId;
+      return {
+        id,
+        explicit,
+        ...(questionSets[id] || {})
+      };
+    }
+
+    if (explicit && isSafeSetId(requested)) {
+      return autoQuestionSet(requested, settingsForSets, explicit);
+    }
+
     const fallbackId = setIds.includes(defaultSet) ? defaultSet : setIds[0];
-    const id = exactId || normalizedId || fallbackId;
+    if (!fallbackId) return { id: "", explicit };
     return {
-      id,
+      id: fallbackId,
       explicit,
-      ...(questionSets[id] || {})
+      ...(questionSets[fallbackId] || {})
     };
+  }
+
+  function autoQuestionSet(setId, settingsForSets, explicit) {
+    const rules = settingsForSets || {};
+    const label = fillSetPattern(rules.autoQuestionSetLabelPattern || "第{set}套", setId);
+    return {
+      id: setId,
+      explicit,
+      label,
+      title: fillSetPattern(rules.autoQuestionSetTitlePattern || "第{set}套在线练习", setId, label),
+      questionSource: fillSetPattern(rules.autoQuestionSetPattern || "./question-sets/questions-{set}.csv", setId, label)
+    };
+  }
+
+  function fillSetPattern(pattern, setId, label) {
+    return String(pattern || "")
+      .replaceAll("{set}", setId)
+      .replaceAll("{label}", label || setId);
+  }
+
+  function isSafeSetId(value) {
+    return /^[A-Za-z0-9_-]+$/.test(String(value || ""));
   }
 
   function normalizeSetId(value) {

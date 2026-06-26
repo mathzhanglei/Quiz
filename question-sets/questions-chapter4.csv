@@ -1,0 +1,31 @@
+编号,题干,A,B,C,D,答案,分值,启用,解析
+ch4-q1,"Let $w(t)=e^{it}$. Then $\displaystyle \int_0^{2\pi} w(t)\,dt = 0$.",正确,错误,,,A,1,是,Standard example.
+ch4-q2,"If $f$ is analytic in a simply connected domain $D$, then for every closed curve $C\subset D$, $\displaystyle \int_C f(z)\,dz = 0$.",正确,错误,,,A,1,是,Cauchy Integral Theorem.
+ch4-q3,"Let $C$ be the positively oriented circle $|z|=2$. Then $\displaystyle \int_C \frac{e^z}{z}\,dz = 2\pi i$.",正确,错误,,,A,1,是,Cauchy Integral Formula with $z_0=0$.
+ch4-q4,"Let $C$ be the positively oriented unit circle. Then $\displaystyle \int_C \frac{\sin z}{z^2}\,dz = 0$.",正确,错误,,,B,1,是,The correct value is $2\pi i$ because $\sin'(0)=1$.
+ch4-q5,"If $f$ is continuous in a domain $D$ and $\displaystyle \int_C f(z)\,dz = 0$ for every simple closed curve $C\subset D$, then $f$ is analytic in $D$.",正确,错误,,,A,1,是,Morera's Theorem.
+ch4-q6,"Let $C$ be the positively oriented circle $|z|=2$. Then $\displaystyle \int_C \frac{z^3}{(z-1)^2}\,dz = 2\pi i$.",正确,错误,,,B,1,是,"By the derivative formula, the integral equals $2\pi i\cdot 3\cdot 1^2 = 6\pi i$."
+ch4-q7,"If $f$ is entire and bounded, then $f$ is constant.",正确,错误,,,A,1,是,Liouville's Theorem.
+ch4-q8,Every non‑constant polynomial with complex coefficients has at least one zero.,正确,错误,,,A,1,是,Fundamental Theorem of Algebra.
+ch4-q9,"Let $C$ be the positively oriented circle $|z|=R$ and suppose $|f(z)|\le M$ for all $z\in C$. Then $\displaystyle \left|\int_C f(z)\,dz\right| \le 2\pi R M$.",正确,错误,,,A,1,是,"ML‑inequality, length $=2\pi R$."
+ch4-q10,"Let $C$ be the positively oriented unit circle. Then $\displaystyle \int_C \frac{e^z}{z^n}\,dz = \frac{2\pi i}{(n-1)!}$ for every positive integer $n$.",正确,错误,,,A,1,是,Derivative formula: $e^{(n-1)}(0)=1$.
+ch4-q11,"If $f$ is analytic and non‑constant in a domain $D$, then $|f(z)|$ cannot attain a maximum in the interior of $D$.",正确,错误,,,A,1,是,Maximum Modulus Principle.
+ch4-q12,"Let $C$ be the positively oriented circle $|z|=2$. Then $\displaystyle \int_C \frac{z}{z^2-1}\,dz = 2\pi i$.",正确,错误,,,A,1,是,Residues at $\pm1$ sum to $1$.
+ch4-q13,"If $f$ is analytic at $z_0$, then all its derivatives exist and are analytic at $z_0$.",正确,错误,,,A,1,是,Property of analytic functions.
+ch4-q14,"Let $C$ be the positively oriented unit circle. Then $\displaystyle \int_C \frac{\cos z}{z^4}\,dz = -\frac{\pi i}{3}$.",正确,错误,,,B,1,是,"The third derivative of $\cos z$ at $0$ is $0$, so the integral is $0$."
+ch4-q15,"If $f$ is analytic in a domain $D$ and $C\subset D$ is a closed curve, then $\displaystyle \int_C f'(z)\,dz = 0$.",正确,错误,,,A,1,是,$f$ is a primitive of $f'$.
+ch4-q16,"Suppose $\displaystyle \lim_{R\to\infty} R\cdot \max_{|z|=R}|f(z)| = 0$. Then $\displaystyle \lim_{R\to\infty} \int_{|z|=R} f(z)\,dz = 0$.",正确,错误,,,A,1,是,Follows from the ML‑inequality.
+ch4-q17,"Let $C$ be the composite contour consisting of the positively oriented circle $|z|=3$ and the negatively oriented circle $|z|=1$. Then $\displaystyle \int_C \frac{1}{z}\,dz = 0$.",正确,错误,,,A,1,是,The two contributions cancel.
+ch4-q18,"Let $f$ be analytic in $|z|<2$ with $f(0)=1$. Then $\displaystyle \int_{|z|=1} \frac{f(z)}{z^2}\,dz = 2\pi i f'(0)$.",正确,错误,,,A,1,是,Cauchy Integral Formula for derivatives.
+ch4-q19,"If $f$ is analytic and nowhere zero in a domain $D$, then $1/f$ is also analytic in $D$.",正确,错误,,,A,1,是,Quotient of analytic functions.
+ch4-q20,"Let $C$ be the positively oriented circle $|z|=2$. Then $\displaystyle \int_C \frac{e^{iz}}{z^2+1}\,dz = 0$.",正确,错误,,,B,1,是,The residues at $\pm i$ give a non‑zero sum; the integral equals $\pi(e^{-1}-e^{1})$.
+ch4-q21,"Let $C$ be the positively oriented unit circle. Then $\displaystyle \int_C \frac{\ln(z+2)}{z}\,dz = 2\pi i \ln 2$.",正确,错误,,,A,1,是,"$\ln(z+2)$ is analytic inside the circle, apply Cauchy Integral Formula."
+ch4-q22,"If $f$ is analytic in $|z|<1$ and $|f(z)|\le 1$ there, then $|f'(0)|\le 1$.",正确,错误,,,A,1,是,Cauchy's estimate with $R=1$.
+ch4-q23,"Let $C$ be the positively oriented circle $|z|=3$. Then $\displaystyle \int_C \frac{z^2+3z+8}{z^4+5z^2-14}\,dz = 0$.",正确,错误,,,A,1,是,四个奇点 $\pm\sqrt{2}$ 与 $\pm i\sqrt{7}$ 都在 $|z|=3$ 内。该有理函数在无穷远处没有 $1/z$ 项，因此所有有限极点的留数和为 $0$，积分为 $0$。
+ch4-q24,"If $f$ is analytic in a domain $D$ and $C\subset D$ is a simple closed curve, then for every $z_0$ inside $C$, $\displaystyle f(z_0)=\frac{1}{2\pi i}\int_C \frac{f(z)}{z-z_0}\,dz$.",正确,错误,,,A,1,是,Cauchy Integral Formula.
+ch4-q25,"Let $C$ be the positively oriented circle $|z|=2$. Then $\displaystyle \int_C \frac{1}{(z-1)(z-3)}\,dz = 0$.",正确,错误,,,B,1,是,Only $z=1$ lies inside; the integral equals $-\pi i$.
+ch4-q26,"If $f$ is analytic at $z_0$, then there exists $r>0$ such that $f(z)=\sum_{n=0}^\infty a_n (z-z_0)^n$ for $|z-z_0|<r$.",正确,错误,,,A,1,是,Taylor expansion of analytic functions.
+ch4-q27,"Let $C$ be the positively oriented unit circle. Then $\displaystyle \int_C \frac{e^{1/z}}{z}\,dz = 2\pi i$.",正确,错误,,,A,1,是,The residue of $e^{1/z}/z$ at $0$ is $1$.
+ch4-q28,"If $f$ is analytic in $|z|<R$ and $|f(z)|\le M$, then $|f^{(n)}(0)|\le \dfrac{n!\,M}{R^n}$.",正确,错误,,,A,1,是,Cauchy's inequality.
+ch4-q29,"Let $C$ be the positively oriented circle $|z|=2$. Then $\displaystyle \int_C \frac{\sin z}{(z-\pi/2)^2}\,dz = 0$.",正确,错误,,,A,1,是,$\sin'(\pi/2)=0$.
+ch4-q30,"If $f$ is analytic and non‑constant in a domain $D$, then $|f(z)|$ cannot attain a minimum in the interior of $D$ unless $f(z)\equiv 0$.",正确,错误,,,B,1,是,The Minimum Modulus Principle requires that $f$ has no zeros; otherwise the minimum may be zero attained at zeros inside $D$.

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>二维码索引</title>
+    <link rel="stylesheet" href="./styles.css?v=20260626-qr-index" />
+    <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script defer src="./questions.js?v=20260626-question-folder"></script>
+    <script defer src="./qrcodes.js?v=20260626-qr-index"></script>
+  </head>
+  <body>
+    <main class="app-shell qr-shell">
+      <section class="topbar" aria-label="二维码索引">
+        <div>
+          <p class="eyebrow">Teacher</p>
+          <h1>二维码索引</h1>
+        </div>
+        <div class="topbar-actions">
+          <a class="ghost link-button" href="./stats.html">
+            <i data-lucide="bar-chart-3"></i>
+            答题统计
+          </a>
+          <a class="ghost link-button" href="./index.html">
+            <i data-lucide="arrow-left"></i>
+            返回考试
+          </a>
+        </div>
+      </section>
+
+      <section class="panel qr-controls">
+        <label class="qr-max-field">
+          <span>扫描到第几套</span>
+          <input id="qrMaxSet" type="number" min="1" max="300" step="1" />
+        </label>
+        <button class="primary" id="scanQrButton" type="button">
+          <i data-lucide="refresh-cw"></i>
+          重新扫描
+        </button>
+        <p class="source-status" id="qrStatus">正在扫描题库。</p>
+      </section>
+
+      <section class="qr-grid" id="qrGrid" aria-live="polite"></section>
+    </main>
+  </body>
+</html>
