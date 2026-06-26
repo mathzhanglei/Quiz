@@ -218,7 +218,7 @@
 
       if (!response.ok) {
         const detail = await response.text();
-        throw new Error(detail || `HTTP ${response.status}`);
+        throw new Error(readableSupabaseError(detail) || `HTTP ${response.status}`);
       }
 
       const records = await response.json();
@@ -571,6 +571,13 @@
     } catch (error) {
       return [];
     }
+  }
+
+  function readableSupabaseError(detail) {
+    const parsed = parseJsonObject(detail);
+    const message = parsed && parsed.message ? String(parsed.message) : String(detail || "");
+    if (message.includes("invalid stats token")) return "统计口令不正确，或 Supabase 里还没有把默认口令改掉。";
+    return message;
   }
 
   function parseSummaryText(value) {
