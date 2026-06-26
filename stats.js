@@ -10,7 +10,6 @@
   if (selectedQuestionSet.questionSource) settings.questionSource = selectedQuestionSet.questionSource;
   const questionSource = settings.questionSource || "./question-sets/questions.csv";
   const selectedQuizTitle = selectedQuestionSet.title || (selectedQuestionSet.meta && selectedQuestionSet.meta.title) || (config.meta && config.meta.title) || "";
-  const statsEndpoint = String(settings.statsEndpoint || "").trim();
   const statsRpcName = String(settings.statsRpcName || "quiz_results_for_stats").trim();
   const clearRpcName = String(settings.clearRpcName || "quiz_clear_results_for_set").trim();
   const statsTokenKey = "texQuizStatsToken";
@@ -23,7 +22,9 @@
     statsToken: $("statsToken"),
     loadRemoteButton: $("loadRemoteButton"),
     loadSampleButton: $("loadSampleButton"),
+    clearSetInput: $("clearSetInput"),
     clearSetButton: $("clearSetButton"),
+    clearAllButton: $("clearAllButton"),
     statsStatus: $("statsStatus"),
     summaryGrid: $("summaryGrid"),
     statsPanels: $("statsPanels"),
@@ -40,7 +41,8 @@
     elements.resultsFile.addEventListener("change", handleFile);
     elements.loadRemoteButton.addEventListener("click", loadRemoteResults);
     elements.loadSampleButton.addEventListener("click", showEmptyStructure);
-    elements.clearSetButton.addEventListener("click", clearCurrentSetResults);
+    elements.clearSetButton.addEventListener("click", clearSelectedSetResults);
+    elements.clearAllButton.addEventListener("click", clearAllResults);
     await loadQuestions();
     setupRemoteControls();
   }
@@ -50,12 +52,13 @@
     const tokenFromUrl = params.get("statsToken") || params.get("token") || "";
     const savedToken = localStorage.getItem(statsTokenKey) || "";
     elements.statsToken.value = tokenFromUrl || savedToken;
-    elements.loadRemoteButton.disabled = !hasRemoteStatsSource();
-    elements.clearSetButton.disabled = !hasSupabaseStatsSource() || !selectedQuestionSet.id;
-    if (!hasRemoteStatsSource()) {
-      setStatus("没有配置自动读取地址，可上传成绩 CSV。");
+    elements.loadRemoteButton.disabled = !hasSupabaseStatsSource();
+    elements.clearSetInput.value = selectedQuestionSet.id || "";
+    setClearButtonsDisabled(false);
+    if (!hasSupabaseStatsSource()) {
+      setStatus("没有配置 Supabase，可上传成绩 CSV。");
     }
-    if (hasRemoteStatsSource() && (params.get("autoload") === "1" || tokenFromUrl)) {
+    if (hasSupabaseStatsSource() && (params.get("autoload") === "1" || tokenFromUrl)) {
       window.setTimeout(loadRemoteResults, 0);
     }
   }
@@ -155,48 +158,13 @@
     });
   }
 
-  function recordsFromRemoteRows(data) {
-    if (!Array.isArray(data.rows) || !Array.isArray(data.headers)) return [];
-    const rows = [data.headers, ...data.rows];
-    return recordsFromRows(rows);
-  }
-
   async function loadRemoteResults() {
-    if (hasSupabaseStatsSource()) {
-      await loadSupabaseResults();
+    if (!hasSupabaseStatsSource()) {
+      setStatus("没有配置 Supabase，可上传成绩 CSV。");
       return;
     }
 
-    if (!statsEndpoint) {
-      setStatus("没有配置自动读取地址，可上传成绩 CSV。");
-      return;
-    }
-
-    const token = elements.statsToken.value.trim();
-    if (token) localStorage.setItem(statsTokenKey, token);
-    setStatus("正在自动读取成绩...");
-
-    try {
-      const data = await fetchJsonp(statsEndpoint, {
-        action: "results",
-        token
-      });
-      if (!data || data.ok !== true) {
-        throw new Error(data && data.error ? data.error : "自动读取失败。");
-      }
-
-      const records = Array.isArray(data.records) ? data.records : recordsFromRemoteRows(data);
-      const attempts = attemptsFromRecords(records);
-      if (!attempts.length) {
-        setStatus("已经连上收集表，但还没有识别到有效成绩。");
-        return;
-      }
-
-      renderStats(attempts);
-      setStatus(`已自动读取并统计 ${attempts.length} 份提交。`);
-    } catch (error) {
-      setStatus(error.message || "自动读取失败，可先用 CSV 上传。");
-    }
+    await loadSupabaseResults();
   }
 
   async function loadSupabaseResults() {
@@ -210,22 +178,7 @@
     setStatus("正在从 Supabase 读取成绩...");
 
     try {
-      const response = await fetch(`${normalizeSupabaseUrl()}/rest/v1/rpc/${encodeURIComponent(statsRpcName)}`, {
-        method: "POST",
-        headers: {
-          apikey: String(settings.supabaseAnonKey || "").trim(),
-          Authorization: `Bearer ${String(settings.supabaseAnonKey || "").trim()}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ p_token: token })
-      });
-
-      if (!response.ok) {
-        const detail = await response.text();
-        throw new Error(readableSupabaseError(detail) || `HTTP ${response.status}`);
-      }
-
-      const records = await response.json();
+      const records = await fetchSupabaseRecords(token);
       const attempts = attemptsFromRecords(Array.isArray(records) ? records : []);
       if (!attempts.length) {
         setStatus("已经连上 Supabase，但还没有识别到有效成绩。");
@@ -239,7 +192,7 @@
     }
   }
 
-  async function clearCurrentSetResults() {
+  async function clearSelectedSetResults() {
     if (!hasSupabaseStatsSource()) {
       setStatus("没有配置 Supabase，无法清空后台数据。");
       return;
@@ -251,52 +204,130 @@
       return;
     }
 
-    const setId = selectedQuestionSet.id || "";
+    const setId = elements.clearSetInput.value.trim();
     if (!setId) {
-      setStatus("没有识别到当前章节编号，不能清空。");
+      setStatus("请输入要清空的题库编号，例如 3。");
       return;
     }
 
-    const setLabel = selectedQuestionSet.label || setId;
-    const confirmText = `清空${setLabel}`;
-    const typed = window.prompt(`将删除 ${setLabel} 的所有提交数据，不能撤销。\n请输入“${confirmText}”确认：`);
+    const setLabel = selectedQuestionSet.id === setId ? selectedQuestionSet.label || setId : `第 ${setId} 套`;
+    const confirmText = `清空${setId}`;
+    const typed = window.prompt(`将删除题库编号 ${setId} 的所有提交数据，不能撤销。\n请输入“${confirmText}”确认：`);
     if (typed !== confirmText) {
       setStatus("已取消清空。");
       return;
     }
 
     localStorage.setItem(statsTokenKey, token);
-    elements.clearSetButton.disabled = true;
+    setClearButtonsDisabled(true);
     setStatus(`正在清空 ${setLabel} 的提交数据...`);
 
     try {
-      const response = await fetch(`${normalizeSupabaseUrl()}/rest/v1/rpc/${encodeURIComponent(clearRpcName)}`, {
-        method: "POST",
-        headers: {
-          apikey: String(settings.supabaseAnonKey || "").trim(),
-          Authorization: `Bearer ${String(settings.supabaseAnonKey || "").trim()}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          p_token: token,
-          p_question_set: setId
-        })
-      });
-
-      if (!response.ok) {
-        const detail = await response.text();
-        throw new Error(readableSupabaseError(detail) || `HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const deletedCount = deletedCountFromRpc(data);
+      const deletedCount = await clearRemoteSet(token, setId);
       clearStatsView();
       setStatus(`已清空 ${setLabel} 的 ${deletedCount} 份提交。`);
     } catch (error) {
       setStatus(`清空失败：${error.message || "请检查统计口令和 Supabase 函数。"} `);
     } finally {
-      elements.clearSetButton.disabled = !hasSupabaseStatsSource() || !selectedQuestionSet.id;
+      setClearButtonsDisabled(false);
     }
+  }
+
+  async function clearAllResults() {
+    if (!hasSupabaseStatsSource()) {
+      setStatus("没有配置 Supabase，无法清空后台数据。");
+      return;
+    }
+
+    const token = elements.statsToken.value.trim();
+    if (!token) {
+      setStatus("请输入统计口令。");
+      return;
+    }
+
+    const confirmText = "清空全部";
+    const typed = window.prompt(`将删除所有题库编号的提交数据，不能撤销。\n请输入“${confirmText}”确认：`);
+    if (typed !== confirmText) {
+      setStatus("已取消清空。");
+      return;
+    }
+
+    localStorage.setItem(statsTokenKey, token);
+    setClearButtonsDisabled(true);
+    setStatus("正在读取后台提交数据...");
+
+    try {
+      const records = await fetchSupabaseRecords(token);
+      const setIds = uniqueSetIds(records);
+      if (!records.length || !setIds.length) {
+        clearStatsView();
+        setStatus("后台没有可清空的提交。");
+        return;
+      }
+
+      setStatus(`正在清空全部提交数据，共 ${records.length} 份...`);
+      let deletedCount = await clearRemoteSet(token, "__all__");
+      if (deletedCount === 0 && records.length > 0) {
+        deletedCount = 0;
+        for (const setId of setIds) {
+          deletedCount += await clearRemoteSet(token, setId);
+        }
+      }
+
+      clearStatsView();
+      setStatus(`已清空全部 ${deletedCount} 份提交。`);
+    } catch (error) {
+      setStatus(`清空失败：${error.message || "请检查统计口令和 Supabase 函数。"} `);
+    } finally {
+      setClearButtonsDisabled(false);
+    }
+  }
+
+  async function fetchSupabaseRecords(token) {
+    const response = await fetch(`${normalizeSupabaseUrl()}/rest/v1/rpc/${encodeURIComponent(statsRpcName)}`, {
+      method: "POST",
+      headers: {
+        apikey: String(settings.supabaseAnonKey || "").trim(),
+        Authorization: `Bearer ${String(settings.supabaseAnonKey || "").trim()}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ p_token: token })
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(readableSupabaseError(detail) || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async function clearRemoteSet(token, setId) {
+    const response = await fetch(`${normalizeSupabaseUrl()}/rest/v1/rpc/${encodeURIComponent(clearRpcName)}`, {
+      method: "POST",
+      headers: {
+        apikey: String(settings.supabaseAnonKey || "").trim(),
+        Authorization: `Bearer ${String(settings.supabaseAnonKey || "").trim()}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        p_token: token,
+        p_question_set: setId
+      })
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(readableSupabaseError(detail) || `HTTP ${response.status}`);
+    }
+
+    return deletedCountFromRpc(await response.json());
+  }
+
+  function uniqueSetIds(records) {
+    return Array.from(new Set((Array.isArray(records) ? records : [])
+      .map((record) => String(record && record.question_set !== undefined ? record.question_set : "").trim())
+      .filter(Boolean)));
   }
 
   function showEmptyStructure() {
@@ -326,7 +357,7 @@
 
   function normalizeAttempt(record) {
     const payload = parseJsonObject(getField(record, ["payload", "原始数据", "提交数据"]));
-    const summaryPayload = parseSummaryText(getField(record, ["成绩摘要", "提交内容", "复制内容", "摘要", "summary", "content"]));
+    const summaryPayload = parseSummaryText(getField(record, ["提交内容", "复制内容", "摘要", "summary", "content"]));
     const student = payload && payload.student ? payload.student : {};
     const rawAnswers = getField(record, ["answers_json", "answers", "答题", "作答记录"]);
     const answers = normalizeAnswers(
@@ -593,40 +624,6 @@
     return rows;
   }
 
-  function fetchJsonp(endpoint, params) {
-    return new Promise((resolve, reject) => {
-      const callbackName = `__quizStatsCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      const url = new URL(endpoint, window.location.href);
-      Object.entries(params || {}).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) url.searchParams.set(key, value);
-      });
-      url.searchParams.set("callback", callbackName);
-
-      const script = document.createElement("script");
-      const timer = window.setTimeout(() => {
-        cleanup();
-        reject(new Error("自动读取超时，可稍后重试或上传 CSV。"));
-      }, 15000);
-
-      function cleanup() {
-        window.clearTimeout(timer);
-        delete window[callbackName];
-        script.remove();
-      }
-
-      window[callbackName] = (data) => {
-        cleanup();
-        resolve(data);
-      };
-      script.onerror = () => {
-        cleanup();
-        reject(new Error("自动读取失败，请检查自动读取服务是否可用。"));
-      };
-      script.src = url.toString();
-      document.head.append(script);
-    });
-  }
-
   function parseJsonObject(value) {
     if (!value) return null;
     if (typeof value === "object" && !Array.isArray(value)) return value;
@@ -653,7 +650,7 @@
     const parsed = parseJsonObject(detail);
     const message = parsed && parsed.message ? String(parsed.message) : String(detail || "");
     if (message.includes("invalid stats token")) return "统计口令不正确，或 Supabase 里还没有把默认口令改掉。";
-    if (message.includes("missing question set")) return "没有传入章节编号，未清空。";
+    if (message.includes("missing question set")) return "没有传入题库编号，未清空。";
     return message;
   }
 
@@ -835,8 +832,10 @@
     elements.statsStatus.textContent = message;
   }
 
-  function hasRemoteStatsSource() {
-    return Boolean(statsEndpoint || hasSupabaseStatsSource());
+  function setClearButtonsDisabled(disabled) {
+    const shouldDisable = disabled || !hasSupabaseStatsSource();
+    elements.clearSetButton.disabled = shouldDisable;
+    elements.clearAllButton.disabled = shouldDisable;
   }
 
   function hasSupabaseStatsSource() {

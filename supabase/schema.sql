@@ -153,8 +153,12 @@ begin
     raise exception 'missing question set';
   end if;
 
-  delete from public.quiz_results
-   where question_set = target_set;
+  if target_set = '__all__' then
+    delete from public.quiz_results;
+  else
+    delete from public.quiz_results
+     where question_set = target_set;
+  end if;
 
   get diagnostics deleted = row_count;
 

@@ -20,24 +20,13 @@ window.QUIZ_CONFIG = {
     supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a2dxZ29oc3VlcnBmamplYmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MTUyNjYsImV4cCI6MjA5Nzk5MTI2Nn0.UBmi56QRPQIzGZ2_HmWkM3ISI3mdGXhATCJ1Q93nz4k",
     statsProvider: "supabase",
     statsRpcName: "quiz_results_for_stats",
-    clearRpcName: "quiz_clear_results_for_set",
-    submitEndpoint: ""
+    clearRpcName: "quiz_clear_results_for_set"
   },
   questionSets: {
     default: {
       label: "默认",
       title: "复变函数基础在线考试",
       questionSource: "./question-sets/questions.csv"
-    },
-    chapter3: {
-      label: "第三章",
-      title: "复变函数第三章在线练习",
-      questionSource: "./question-sets/questions-chapter3.csv"
-    },
-    chapter4: {
-      label: "第四章",
-      title: "复变函数第四章在线练习",
-      questionSource: "./question-sets/questions-chapter4.csv"
     }
   },
   questions: []

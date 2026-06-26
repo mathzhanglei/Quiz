@@ -104,7 +104,7 @@ http://127.0.0.1:8765/stats.html?set=5
 
 只要文件名符合 `question-sets/questions-编号.csv`，一般不需要再改 `questions.js`。网页会自动把 `?set=5` 对应到 `question-sets/questions-5.csv`，并把这套题的后台编号记为 `5`。
 
-Supabase 仍然只需要一张 `quiz_results` 表，不需要为 50 套题建 50 张表。每次提交会自动保存 `question_set`，所以不同套题会分开统计；「清空本章」也只清当前 `set` 的提交数据。
+Supabase 仍然只需要一张 `quiz_results` 表，不需要为 50 套题建 50 张表。每次提交会自动保存 `question_set`，所以不同套题会分开统计；统计页可以按题库编号清空，也可以清空全部提交。
 
 ### CSV 格式
 
@@ -182,41 +182,7 @@ questionSets: {
 https://mathzhanglei.github.io/Quiz/?set=midterm
 ```
 
-## 旧章节链接
-
-为了兼容之前已经生成的二维码，下面这些旧章节链接仍然可用：
-
-- `question-sets/questions-chapter3.csv`：第三章
-- `question-sets/questions-chapter4.csv`：第四章
-
-然后在 `questions.js` 里登记：
-
-```js
-questionSets: {
-  chapter3: {
-    label: "第三章",
-    title: "复变函数第三章在线练习",
-    questionSource: "./question-sets/questions-chapter3.csv"
-  },
-  chapter4: {
-    label: "第四章",
-    title: "复变函数第四章在线练习",
-    questionSource: "./question-sets/questions-chapter4.csv"
-  }
-}
-```
-
-学生链接：
-
-- 第三章：`https://mathzhanglei.github.io/Quiz/?set=chapter3`
-- 第四章：`https://mathzhanglei.github.io/Quiz/?set=chapter4`
-
-老师统计：
-
-- 第三章：`https://mathzhanglei.github.io/Quiz/stats.html?set=chapter3`
-- 第四章：`https://mathzhanglei.github.io/Quiz/stats.html?set=chapter4`
-
-如果按编号方式管理，也可以使用：
+编号方式示例：
 
 - 第三套：`https://mathzhanglei.github.io/Quiz/?set=3`
 - 第四套：`https://mathzhanglei.github.io/Quiz/?set=4`
@@ -274,9 +240,9 @@ settings: {
 
 1. 打开考试页，随便用一个测试姓名交卷
 2. 回到 Supabase 的 `Table Editor` → `quiz_results`，应该能看到一行新记录
-3. 打开 `stats.html?set=chapter3` 或 `stats.html?set=chapter4`
+3. 打开 `stats.html?set=3` 或 `stats.html?set=4`
 4. 输入刚才设置的统计口令，点击「自动读取」
-5. 如需重测，点击「清空本章」只会删除当前 `set` 对应章节的提交数据
+5. 如需重测，在「清空第几套」里输入编号，例如 `3`，点击「清空选定」；也可以点击「清空全部」
 
 ## 本地备用提交
 
@@ -287,28 +253,13 @@ settings: {
 
 老师可以把这些 CSV 文件拖进 `stats.html` 做统计。
 
-## 腾讯文档收集（备用）
-
-推荐建一个收集表，字段如下：
-
-```text
-姓名
-学号
-章节
-成绩摘要
-```
-
-其中 `成绩摘要` 用多行文本。学生交卷后点击「复制提交内容」，把复制出来的内容粘贴到 `成绩摘要`，然后提交收集表。
-
-老师从腾讯文档导出 CSV 后，打开 `stats.html` 选择该 CSV，即可看到提交人数、学生成绩和错题排行。
-
 ## 老师统计
 
 打开 `stats.html` 可以统计全班答题情况。配置 Supabase 后，输入统计口令并点击「自动读取」，统计页会显示提交人数、平均分、分数分布、学生成绩表、错题排行、每题正确率和每题选项分布。
 
-「清空本章」会按当前页面 URL 的 `set` 参数删除该章节提交，例如 `stats.html?set=chapter4` 只清空第四章数据。操作需要统计口令，并会要求再次输入确认文字。
+「清空选定」会按输入的题库编号删除对应提交，例如输入 `4` 只清空第 4 套数据。「清空全部」会删除所有题库编号的提交。两种操作都需要统计口令，并会要求再次输入确认文字。
 
-CSV 上传仍保留为备用方式：从 Supabase 或其他收集入口导出 CSV 后，在统计页选择该 CSV 文件即可。
+CSV 上传仍保留为备用方式：把学生提交的个人 CSV 成绩文件拖进统计页即可。
 
 ## 学生回看
 

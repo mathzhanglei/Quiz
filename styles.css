@@ -598,6 +598,10 @@ button svg,
   flex: 0 1 220px;
 }
 
+.clear-set-field {
+  flex: 0 1 160px;
+}
+
 .file-picker {
   min-width: min(420px, 100%);
 }
@@ -989,6 +993,7 @@ button svg,
   }
 
   .stats-token,
+  .clear-set-field,
   .qr-max-field {
     flex-basis: auto;
   }
