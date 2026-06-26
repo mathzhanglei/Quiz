@@ -50,7 +50,7 @@ alter table public.quiz_settings enable row level security;
 revoke all on table public.quiz_settings from anon, authenticated;
 
 insert into public.quiz_settings (key, value)
-values ('stats_token', 'change-me')
+values ('stats_token', 'Lei123')
 on conflict (key) do nothing;
 
 create or replace function public.quiz_results_for_stats(p_token text)
@@ -86,7 +86,7 @@ begin
    where key = 'stats_token';
 
   if expected_token is null
-     or expected_token = 'change-me'
+     or expected_token = 'Lei123'
      or p_token is null
      or p_token <> expected_token then
     raise exception 'invalid stats token';
@@ -120,6 +120,6 @@ revoke all on function public.quiz_results_for_stats(text) from public;
 grant execute on function public.quiz_results_for_stats(text) to anon;
 
 -- Run this after changing the token below to your own teacher password.
--- update public.quiz_settings
---    set value = 'your-teacher-stats-token', updated_at = now()
---  where key = 'stats_token';
+update public.quiz_settings
+    set value = 'Lei123', updated_at = now()
+  where key = 'stats_token';
