@@ -671,7 +671,10 @@
   }
 
   function normalizeSupabaseUrl() {
-    return String(settings.supabaseUrl || "").trim().replace(/\/+$/, "");
+    return String(settings.supabaseUrl || "")
+      .trim()
+      .replace(/\/+$/, "")
+      .replace(/\/rest\/v1$/i, "");
   }
 
   function supabaseRecordFromPayload(payload) {

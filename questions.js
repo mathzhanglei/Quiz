@@ -13,7 +13,7 @@ window.QUIZ_CONFIG = {
     shuffleOptions: false,
     showCorrectAnswers: true,
     submitProvider: "supabase",
-    supabaseUrl: "https://rwkgqgohsuerpfjjebbn.supabase.co/rest/v1/",
+    supabaseUrl: "https://rwkgqgohsuerpfjjebbn.supabase.co",
     supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a2dxZ29oc3VlcnBmamplYmJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MTUyNjYsImV4cCI6MjA5Nzk5MTI2Nn0.UBmi56QRPQIzGZ2_HmWkM3ISI3mdGXhATCJ1Q93nz4k",
     statsProvider: "supabase",
     statsRpcName: "quiz_results_for_stats",
