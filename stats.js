@@ -266,9 +266,14 @@
       }
 
       setStatus(`正在清空全部提交数据，共 ${records.length} 份...`);
-      let deletedCount = await clearRemoteSet(token, "__all__");
+      let deletedCount = 0;
+      try {
+        deletedCount = await clearRemoteSet(token, "__all__");
+      } catch (error) {
+        setStatus("一键清空不可用，正在逐套清空...");
+      }
+
       if (deletedCount === 0 && records.length > 0) {
-        deletedCount = 0;
         for (const setId of setIds) {
           deletedCount += await clearRemoteSet(token, setId);
         }

@@ -119,6 +119,8 @@ $$;
 revoke all on function public.quiz_results_for_stats(text) from public;
 grant execute on function public.quiz_results_for_stats(text) to anon;
 
+drop function if exists public.quiz_clear_results_for_set(text, text);
+
 create or replace function public.quiz_clear_results_for_set(
   p_token text,
   p_question_set text
@@ -154,7 +156,8 @@ begin
   end if;
 
   if target_set = '__all__' then
-    delete from public.quiz_results;
+    delete from public.quiz_results
+     where true;
   else
     delete from public.quiz_results
      where question_set = target_set;
@@ -168,6 +171,8 @@ $$;
 
 revoke all on function public.quiz_clear_results_for_set(text, text) from public;
 grant execute on function public.quiz_clear_results_for_set(text, text) to anon;
+
+notify pgrst, 'reload schema';
 
 -- Run this after changing the token below to your own teacher password.
 -- insert into public.quiz_settings (key, value)
