@@ -1,11 +1,11 @@
 编号,题干,A,B,C,D,答案,分值,启用,解析
-q1,"Using the branch $L_{(-\pi)}$, we have $L_{(-\pi)}(-1)=i\pi$.",正确,错误,,,B,1,是,分支 $L_\alpha$ 的辐角范围通常为 $\alpha<\theta<\alpha+2\pi$。当 $\alpha=-\pi$ 时，$-1$ 在割线上，不属于该分支定义域。
-q2,All possible values of $i^i$ are real numbers.,正确,错误,,,A,1,是,$i^i=e^{i\log i}$，而 $\log i=i(\pi/2+2k\pi)$，所以 $i^i=e^{-(\pi/2+2k\pi)}$，全是正实数。
-q3,"Under the principal branch, $(-1)^{\sqrt{2}}$ is a real number.",正确,错误,,,B,1,是,"主值下 $(-1)^{\sqrt2}=e^{\sqrt2\,\mathrm{Log}(-1)}=e^{i\sqrt2\pi}$。由于 $\sqrt2\pi$ 不是 $\pi$ 的整数倍，该值一般不是实数。"
-q4,"For any integer $n$, $e^{(2n+1)\pi i}=-1$.",正确,错误,,,A,1,是,由欧拉公式 $e^{i\theta}=\cos\theta+i\sin\theta$，当 $\theta=(2n+1)\pi$ 时，余弦为 $-1$，正弦为 $0$。
-q5,The hyperbolic sine function $\sinh z$ is entire.,正确,错误,,,A,1,是,$\sinh z=(e^z-e^{-z})/2$，由整函数的线性组合得到，因此 $\sinh z$ 是整函数。
-q6,"If $\sin z=0$, then $z=n\pi$ for some integer $n$.",正确,错误,,,A,1,是,复正弦的零点仍为实数整数倍 $\pi$。可由指数表示或由 $\sin(x+iy)=\sin x\cosh y+i\cos x\sinh y$ 解出。
-q7,"For any complex $z$, $\cos(z+\pi)=-\cos z$.",正确,错误,,,A,1,是,余弦的加法公式对复数成立：$\cos(z+\pi)=\cos z\cos\pi-\sin z\sin\pi=-\cos z$。
-q8,The principal logarithm of $1+i$ equals $\ln(\sqrt{2})+i(\pi/4)$.,正确,错误,,,A,1,是,$1+i$ 的模为 $\sqrt2$，主辐角为 $\pi/4$，所以主对数为 $\ln\sqrt2+i\pi/4$。
-q9,All values of the multi-valued logarithm $\log 1$ are $2k\pi i$ ($k$ is an integer).,正确,错误,,,A,1,是,$1$ 的模为 $1$，所有辐角为 $2k\pi$，所以 $\log1=\ln1+i2k\pi=2k\pi i$。
-q10,"As sets, $\log(1/z)=-\log z$ for any non-zero $z$.",正确,错误,,,A,1,是,若 $\log z=\ln r+i(\theta+2k\pi)$，则 $-\log z=-\ln r-i\theta-2k\pi i$。这正是 $1/z$ 的所有对数值组成的集合。
+q1,"Using the branch $L_{(-\pi)}$, we have $L_{(-\pi)}(-1)=i\pi$.",TRUE,FALSE,,,B,1,是,分支 $L_\alpha$ 的辐角范围通常为 $\alpha<\theta<\alpha+2\pi$。当 $\alpha=-\pi$ 时，$-1$ 在割线上，不属于该分支定义域。
+q2,All possible values of $i^i$ are real numbers.,TRUE,FALSE,,,A,1,是,$i^i=e^{i\log i}$，而 $\log i=i(\pi/2+2k\pi)$，所以 $i^i=e^{-(\pi/2+2k\pi)}$，全是正实数。
+q3,"Under the principal branch, $(-1)^{\sqrt{2}}$ is a real number.",TRUE,FALSE,,,B,1,是,"主值下 $(-1)^{\sqrt2}=e^{\sqrt2\,\mathrm{Log}(-1)}=e^{i\sqrt2\pi}$。由于 $\sqrt2\pi$ 不是 $\pi$ 的整数倍，该值一般不是实数。"
+q4,"For any integer $n$, $e^{(2n+1)\pi i}=-1$.",TRUE,FALSE,,,A,1,是,由欧拉公式 $e^{i\theta}=\cos\theta+i\sin\theta$，当 $\theta=(2n+1)\pi$ 时，余弦为 $-1$，正弦为 $0$。
+q5,The hyperbolic sine function $\sinh z$ is entire.,TRUE,FALSE,,,A,1,是,$\sinh z=(e^z-e^{-z})/2$，由整函数的线性组合得到，因此 $\sinh z$ 是整函数。
+q6,"If $\sin z=0$, then $z=n\pi$ for some integer $n$.",TRUE,FALSE,,,A,1,是,复正弦的零点仍为实数整数倍 $\pi$。可由指数表示或由 $\sin(x+iy)=\sin x\cosh y+i\cos x\sinh y$ 解出。
+q7,"For any complex $z$, $\cos(z+\pi)=-\cos z$.",TRUE,FALSE,,,A,1,是,余弦的加法公式对复数成立：$\cos(z+\pi)=\cos z\cos\pi-\sin z\sin\pi=-\cos z$。
+q8,The principal logarithm of $1+i$ equals $\ln(\sqrt{2})+i(\pi/4)$.,TRUE,FALSE,,,A,1,是,$1+i$ 的模为 $\sqrt2$，主辐角为 $\pi/4$，所以主对数为 $\ln\sqrt2+i\pi/4$。
+q9,All values of the multi-valued logarithm $\log 1$ are $2k\pi i$ ($k$ is an integer).,TRUE,FALSE,,,A,1,是,$1$ 的模为 $1$，所有辐角为 $2k\pi$，所以 $\log1=\ln1+i2k\pi=2k\pi i$。
+q10,"As sets, $\log(1/z)=-\log z$ for any non-zero $z$.",TRUE,FALSE,,,A,1,是,若 $\log z=\ln r+i(\theta+2k\pi)$，则 $-\log z=-\ln r-i\theta-2k\pi i$。这正是 $1/z$ 的所有对数值组成的集合。

@@ -1,11 +1,11 @@
 编号,题干,A,B,C,D,答案,分值,启用,解析
-q1,"Under the principal branch, the modulus of $(1-i)^i$ equals $e^{-\pi/4}$.",正确,错误,,,B,1,是,主值下 $\mathrm{Log}(1-i)=\ln\sqrt2-i\pi/4$，所以 $(1-i)^i=e^{i\ln\sqrt2+\pi/4}$，模为 $e^{\pi/4}$，不是 $e^{-\pi/4}$。
-q2,"If $c$ is an integer, the complex power function $z^c$ is single-valued.",正确,错误,,,A,1,是,整数幂 $z^c$ 可按通常代数意义定义；正整数幂是多项式，负整数幂在 $z\ne0$ 上也是单值函数。
-q3,"Under the principal branch, $\frac{d}{dz}(z^c)=c z^{c-1}$ holds for non-zero $z$.",正确,错误,,,A,1,是,在选定的对数分支上 $z^c=e^{c\mathrm{Log}z}$，分支定义域内求导可得 $(z^c)'=c z^{c-1}$。
-q4,All possible values of $1^{1/\pi}$ lie on the unit circle.,正确,错误,,,A,1,是,$1^{1/\pi}=e^{(1/\pi)\log1}=e^{(1/\pi)2k\pi i}=e^{2ki}$，每个值模长都是 $1$。
-q5,"Using the branch $L_{(\pi/4)}$, we have $L_{(\pi/4)}(i^2)=2L_{(\pi/4)}(i)$.",正确,错误,,,A,1,是,在该分支中 $i$ 的辐角为 $\pi/2$，而 $i^2=-1$ 的辐角可取 $\pi$，所以 $L_{\pi/4}(i^2)=i\pi=2(i\pi/2)=2L_{\pi/4}(i)$。
-q6,"For any complex $z$, $\sin^2 z+\cos^2 z=1$.",正确,错误,,,A,1,是,三角恒等式由指数定义推出，对所有复数仍成立。也可由整函数恒等定理从实轴推广到复平面。
-q7,The singularities of $\cot z$ occur at $z=n\pi$ ($n$ is an integer).,正确,错误,,,A,1,是,$\cot z=\cos z/\sin z$，奇点出现在 $\sin z=0$ 处，即 $z=n\pi$。
-q8,The principal logarithm of $-i$ equals $-i\pi/2$.,正确,错误,,,A,1,是,$-i$ 的模为 $1$，主辐角为 $-\pi/2$，所以 $\mathrm{Log}(-i)=\ln1-i\pi/2=-i\pi/2$。
-q9,"For any non-zero $z$ and positive integer $n$, $\log(z^n)=n\log z$ as sets.",正确,错误,,,B,1,是,左边 $\log(z^n)$ 的辐角仍以 $2\pi$ 为间隔，而 $n\log z$ 的虚部以 $2n\pi$ 为间隔。除特殊情形外，二者作为集合不相等。
-q10,"On the domain $D_\alpha=\{r e^{i\theta}: r>0,\ \alpha<\theta<\alpha+2\pi\}$, the branch $L_\alpha(z)=\ln r+i\theta$ is analytic.",正确,错误,,,A,1,是,$D_\alpha$ 去掉了一条射线后可连续选取辐角 $\theta$，因此 $L_\alpha$ 是该域上的一个解析对数分支。
+q1,"Under the principal branch, the modulus of $(1-i)^i$ equals $e^{-\pi/4}$.",TRUE,FALSE,,,B,1,是,主值下 $\mathrm{Log}(1-i)=\ln\sqrt2-i\pi/4$，所以 $(1-i)^i=e^{i\ln\sqrt2+\pi/4}$，模为 $e^{\pi/4}$，不是 $e^{-\pi/4}$。
+q2,"If $c$ is an integer, the complex power function $z^c$ is single-valued.",TRUE,FALSE,,,A,1,是,整数幂 $z^c$ 可按通常代数意义定义；正整数幂是多项式，负整数幂在 $z\ne0$ 上也是单值函数。
+q3,"Under the principal branch, $\frac{d}{dz}(z^c)=c z^{c-1}$ holds for non-zero $z$.",TRUE,FALSE,,,A,1,是,在选定的对数分支上 $z^c=e^{c\mathrm{Log}z}$，分支定义域内求导可得 $(z^c)'=c z^{c-1}$。
+q4,All possible values of $1^{1/\pi}$ lie on the unit circle.,TRUE,FALSE,,,A,1,是,$1^{1/\pi}=e^{(1/\pi)\log1}=e^{(1/\pi)2k\pi i}=e^{2ki}$，每个值模长都是 $1$。
+q5,"Using the branch $L_{(\pi/4)}$, we have $L_{(\pi/4)}(i^2)=2L_{(\pi/4)}(i)$.",TRUE,FALSE,,,A,1,是,在该分支中 $i$ 的辐角为 $\pi/2$，而 $i^2=-1$ 的辐角可取 $\pi$，所以 $L_{\pi/4}(i^2)=i\pi=2(i\pi/2)=2L_{\pi/4}(i)$。
+q6,"For any complex $z$, $\sin^2 z+\cos^2 z=1$.",TRUE,FALSE,,,A,1,是,三角恒等式由指数定义推出，对所有复数仍成立。也可由整函数恒等定理从实轴推广到复平面。
+q7,The singularities of $\cot z$ occur at $z=n\pi$ ($n$ is an integer).,TRUE,FALSE,,,A,1,是,$\cot z=\cos z/\sin z$，奇点出现在 $\sin z=0$ 处，即 $z=n\pi$。
+q8,The principal logarithm of $-i$ equals $-i\pi/2$.,TRUE,FALSE,,,A,1,是,$-i$ 的模为 $1$，主辐角为 $-\pi/2$，所以 $\mathrm{Log}(-i)=\ln1-i\pi/2=-i\pi/2$。
+q9,"For any non-zero $z$ and positive integer $n$, $\log(z^n)=n\log z$ as sets.",TRUE,FALSE,,,B,1,是,左边 $\log(z^n)$ 的辐角仍以 $2\pi$ 为间隔，而 $n\log z$ 的虚部以 $2n\pi$ 为间隔。除特殊情形外，二者作为集合不相等。
+q10,"On the domain $D_\alpha=\{r e^{i\theta}: r>0,\ \alpha<\theta<\alpha+2\pi\}$, the branch $L_\alpha(z)=\ln r+i\theta$ is analytic.",TRUE,FALSE,,,A,1,是,$D_\alpha$ 去掉了一条射线后可连续选取辐角 $\theta$，因此 $L_\alpha$ 是该域上的一个解析对数分支。

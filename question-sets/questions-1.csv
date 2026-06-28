@@ -1,11 +1,11 @@
 编号,题干,A,B,C,D,答案,分值,启用,解析
-q1,"For any complex number $z=x+iy$, $|e^z|=e^x$ always holds.",正确,错误,,,A,1,是,"$e^z=e^{x+iy}=e^x(\cos y+i\sin y)$，而 $|\cos y+i\sin y|=1$，所以 $|e^z|=e^x$。"
-q2,"The function $\sin z$ is entire (analytic everywhere in $\mathbb{C}$).",正确,错误,,,A,1,是,"$\sin z$ 可由整函数指数函数表示为 $\sin z=(e^{iz}-e^{-iz})/(2i)$，因此在整个复平面解析。"
-q3,"The equation $\cos z=0$ has only real solutions $z=\pi/2+n\pi$ ($n$ is an integer) in the complex plane.",正确,错误,,,A,1,是,"若 $z=x+iy$，由 $\cos z=\cos x\cosh y-i\sin x\sinh y$。令其为零可得 $y=0$ 且 $\cos x=0$，所以解为实数 $x=\pi/2+n\pi$。"
-q4,"For any complex $z$, $\sin(iz)=i\sinh z$.",正确,错误,,,A,1,是,"由 $\sin w=(e^{iw}-e^{-iw})/(2i)$，取 $w=iz$ 得 $\sin(iz)=(e^{-z}-e^z)/(2i)=i(e^z-e^{-z})/2=i\sinh z$。"
-q5,"If $z=x+iy$, then $|\cos z|^2=\cos^2 x+\sinh^2 y$.",正确,错误,,,A,1,是,"$\cos(x+iy)=\cos x\cosh y-i\sin x\sinh y$，取模平方得 $\cos^2x\cosh^2y+\sin^2x\sinh^2y=\cos^2x+\sinh^2y$。"
-q6,"The tangent function $\tan z$ is $\pi$-periodic.",正确,错误,,,A,1,是,"$\sin(z+\pi)=-\sin z$ 且 $\cos(z+\pi)=-\cos z$，所以 $\tan(z+\pi)=\sin(z+\pi)/\cos(z+\pi)=\tan z$。"
-q7,"For any non-zero complex $z$, the multi-valued equality $\log(z^2)=2\log z$ holds as sets.",正确,错误,,,B,1,是,"设 $\log z=\ln|z|+i(\arg z+2k\pi)$，则 $2\log z$ 的虚部相差 $4\pi$；而 $\log(z^2)$ 的虚部相差 $2\pi$。两者作为集合一般不同。"
-q8,"The principal logarithm satisfies $\mathrm{Log}(e^z)=z$ for all complex $z$.",正确,错误,,,B,1,是,"主值对辐角有限制，$\mathrm{Log}(e^z)$ 只取虚部落在主值范围内的代表值，不一定等于原来的 $z$。"
-q9,"The principal value $\mathrm{Log}(-1)=i\pi$.",正确,错误,,,A,1,是,"主辐角通常取 $(-\pi,\pi]$，因此 $-1$ 的主辐角是 $\pi$，所以 $\mathrm{Log}(-1)=\ln1+i\pi=i\pi$。"
-q10,"For any non-zero complex $z$, $e^{\log z}=z$ (using the multi-valued logarithm).",正确,错误,,,A,1,是,"任一对数值可写成 $\log z=\ln|z|+i(\arg z+2k\pi)$，指数化后得到 $|z|e^{i\arg z}e^{2k\pi i}=z$。"
+q1,"For any complex number $z=x+iy$, $|e^z|=e^x$ always holds.",TRUE,FALSE,,,A,1,是,$e^z=e^{x+iy}=e^x(\cos y+i\sin y)$，而 $|\cos y+i\sin y|=1$，所以 $|e^z|=e^x$。
+q2,The function $\sin z$ is entire (analytic everywhere in $\mathbb{C}$).,TRUE,FALSE,,,A,1,是,$\sin z$ 可由整函数指数函数表示为 $\sin z=(e^{iz}-e^{-iz})/(2i)$，因此在整个复平面解析。
+q3,The equation $\cos z=0$ has only real solutions $z=\pi/2+n\pi$ ($n$ is an integer) in the complex plane.,TRUE,FALSE,,,A,1,是,若 $z=x+iy$，由 $\cos z=\cos x\cosh y-i\sin x\sinh y$。令其为零可得 $y=0$ 且 $\cos x=0$，所以解为实数 $x=\pi/2+n\pi$。
+q4,"For any complex $z$, $\sin(iz)=i\sinh z$.",TRUE,FALSE,,,A,1,是,由 $\sin w=(e^{iw}-e^{-iw})/(2i)$，取 $w=iz$ 得 $\sin(iz)=(e^{-z}-e^z)/(2i)=i(e^z-e^{-z})/2=i\sinh z$。
+q5,"If $z=x+iy$, then $|\cos z|^2=\cos^2 x+\sinh^2 y$.",TRUE,FALSE,,,A,1,是,$\cos(x+iy)=\cos x\cosh y-i\sin x\sinh y$，取模平方得 $\cos^2x\cosh^2y+\sin^2x\sinh^2y=\cos^2x+\sinh^2y$。
+q6,The tangent function $\tan z$ is $\pi$-periodic.,TRUE,FALSE,,,A,1,是,$\sin(z+\pi)=-\sin z$ 且 $\cos(z+\pi)=-\cos z$，所以 $\tan(z+\pi)=\sin(z+\pi)/\cos(z+\pi)=\tan z$。
+q7,"For any non-zero complex $z$, the multi-valued equality $\log(z^2)=2\log z$ holds as sets.",TRUE,FALSE,,,B,1,是,设 $\log z=\ln|z|+i(\arg z+2k\pi)$，则 $2\log z$ 的虚部相差 $4\pi$；而 $\log(z^2)$ 的虚部相差 $2\pi$。两者作为集合一般不同。
+q8,The principal logarithm satisfies $\mathrm{Log}(e^z)=z$ for all complex $z$.,TRUE,FALSE,,,B,1,是,主值对辐角有限制，$\mathrm{Log}(e^z)$ 只取虚部落在主值范围内的代表值，不一定等于原来的 $z$。
+q9,The principal value $\mathrm{Log}(-1)=i\pi$.,TRUE,FALSE,,,A,1,是,"主辐角通常取 $(-\pi,\pi]$，因此 $-1$ 的主辐角是 $\pi$，所以 $\mathrm{Log}(-1)=\ln1+i\pi=i\pi$。"
+q10,"For any non-zero complex $z$, $e^{\log z}=z$ (using the multi-valued logarithm).",TRUE,FALSE,,,A,1,是,任一对数值可写成 $\log z=\ln|z|+i(\arg z+2k\pi)$，指数化后得到 $|z|e^{i\arg z}e^{2k\pi i}=z$。
