@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>答题统计</title>
-    <link rel="stylesheet" href="./styles.css?v=20260626-clear-safe" />
+    <link rel="stylesheet" href="./styles.css?v=20260629-student-lock" />
     <script>
       window.MathJax = {
         tex: {
@@ -19,8 +19,8 @@
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
     <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script defer src="./questions.js?v=20260626-clear-safe"></script>
-    <script defer src="./stats.js?v=20260626-clear-safe"></script>
+    <script defer src="./questions.js?v=20260629-student-lock"></script>
+    <script defer src="./stats.js?v=20260629-student-lock"></script>
   </head>
   <body>
     <main class="app-shell stats-shell">
@@ -88,12 +88,28 @@
           <div class="score-bars" id="scoreBars"></div>
         </section>
 
-        <section class="panel stats-panel">
-          <div class="stats-panel-head">
-            <p class="eyebrow">Students</p>
-            <h2>学生成绩</h2>
+        <section class="panel stats-panel" id="studentPanel">
+          <div class="stats-panel-head student-panel-head">
+            <div>
+              <p class="eyebrow">Students</p>
+              <h2>学生成绩</h2>
+            </div>
+            <div class="student-panel-actions">
+              <button class="secondary" id="unlockStudentButton" type="button">
+                <i data-lucide="lock-keyhole"></i>
+                显示学生成绩
+              </button>
+              <button class="ghost" id="lockStudentButton" type="button" hidden>
+                <i data-lucide="eye-off"></i>
+                隐藏
+              </button>
+            </div>
           </div>
-          <div class="student-table-wrap">
+          <div class="student-lock" id="studentLock">
+            <i data-lucide="lock-keyhole"></i>
+            <span>已隐藏</span>
+          </div>
+          <div class="student-table-wrap" id="studentTableWrap" hidden>
             <table class="student-table">
               <thead>
                 <tr>

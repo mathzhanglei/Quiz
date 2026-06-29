@@ -665,6 +665,20 @@ button svg,
   font-size: 1.05rem;
 }
 
+.student-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.student-panel-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .score-bars,
 .question-stats {
   display: grid;
@@ -706,6 +720,24 @@ button svg,
 
 .student-table-wrap {
   overflow-x: auto;
+}
+
+.student-lock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 118px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.student-lock svg {
+  width: 18px;
+  height: 18px;
 }
 
 .student-table {
@@ -1000,6 +1032,16 @@ button svg,
 
   .question-stat-title {
     flex-direction: column;
+  }
+
+  .student-panel-head,
+  .student-panel-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-panel-actions button {
+    width: 100%;
   }
 
   .qr-card-head,

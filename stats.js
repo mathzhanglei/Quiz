@@ -15,6 +15,7 @@
   const statsTokenKey = "texQuizStatsToken";
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   let questions = [];
+  let currentAttempts = [];
 
   const $ = (id) => document.getElementById(id);
   const elements = {
@@ -29,7 +30,11 @@
     summaryGrid: $("summaryGrid"),
     statsPanels: $("statsPanels"),
     scoreBars: $("scoreBars"),
+    studentLock: $("studentLock"),
+    studentTableWrap: $("studentTableWrap"),
     studentTableBody: $("studentTableBody"),
+    unlockStudentButton: $("unlockStudentButton"),
+    lockStudentButton: $("lockStudentButton"),
     wrongRankPanel: $("wrongRankPanel"),
     wrongRank: $("wrongRank"),
     questionStatsPanel: $("questionStatsPanel"),
@@ -43,6 +48,8 @@
     elements.loadSampleButton.addEventListener("click", showEmptyStructure);
     elements.clearSetButton.addEventListener("click", clearSelectedSetResults);
     elements.clearAllButton.addEventListener("click", clearAllResults);
+    elements.unlockStudentButton.addEventListener("click", unlockStudentScores);
+    elements.lockStudentButton.addEventListener("click", lockStudentScores);
     await loadQuestions();
     setupRemoteControls();
   }
@@ -412,6 +419,7 @@
   }
 
   function renderStats(attempts) {
+    currentAttempts = attempts;
     const totalStudents = attempts.length;
     const maxTotal = Math.max(...attempts.map((attempt) => attempt.total || 0), 0);
     const averageScore = average(attempts.map((attempt) => attempt.score));
@@ -430,7 +438,7 @@
     ].join("");
 
     renderScoreBars(attempts, maxTotal);
-    renderStudentTable(attempts);
+    lockStudentScores();
     const questionStats = computeQuestionStats(attempts);
     renderWrongRank(questionStats);
     renderQuestionStats(questionStats);
@@ -444,11 +452,12 @@
   }
 
   function clearStatsView() {
+    currentAttempts = [];
     elements.summaryGrid.hidden = true;
     elements.summaryGrid.innerHTML = "";
     elements.statsPanels.hidden = true;
     elements.scoreBars.innerHTML = "";
-    elements.studentTableBody.innerHTML = "";
+    lockStudentScores();
     elements.wrongRankPanel.hidden = true;
     elements.wrongRank.innerHTML = "";
     elements.questionStatsPanel.hidden = true;
@@ -489,6 +498,62 @@
         <td>${formatDuration(attempt.durationSeconds)}</td>
       </tr>
     `).join("");
+  }
+
+  function lockStudentScores() {
+    elements.studentTableBody.innerHTML = "";
+    elements.studentLock.hidden = false;
+    elements.studentTableWrap.hidden = true;
+    elements.unlockStudentButton.hidden = false;
+    elements.unlockStudentButton.disabled = !currentAttempts.length;
+    elements.lockStudentButton.hidden = true;
+  }
+
+  async function unlockStudentScores() {
+    if (!currentAttempts.length) {
+      setStatus("请先读取或上传成绩。");
+      return;
+    }
+
+    const token = window.prompt("请再次输入统计口令以显示学生成绩：");
+    if (token === null) {
+      setStatus("已取消显示学生成绩。");
+      return;
+    }
+    if (!token.trim()) {
+      setStatus("请输入统计口令。");
+      return;
+    }
+
+    elements.unlockStudentButton.disabled = true;
+    setStatus("正在验证统计口令...");
+
+    try {
+      await verifyStudentScoreToken(token.trim());
+      localStorage.setItem(statsTokenKey, token.trim());
+      elements.statsToken.value = token.trim();
+      renderStudentTable(currentAttempts);
+      elements.studentLock.hidden = true;
+      elements.studentTableWrap.hidden = false;
+      elements.unlockStudentButton.hidden = true;
+      elements.lockStudentButton.hidden = false;
+      setStatus("已显示学生成绩。");
+    } catch (error) {
+      setStatus(`学生成绩未打开：${error.message || "统计口令不正确。"} `);
+      elements.unlockStudentButton.disabled = false;
+    } finally {
+      refreshIcons();
+    }
+  }
+
+  async function verifyStudentScoreToken(token) {
+    if (hasSupabaseStatsSource()) {
+      await fetchSupabaseRecords(token);
+      return true;
+    }
+
+    if (token === elements.statsToken.value.trim()) return true;
+    throw new Error("统计口令不正确。");
   }
 
   function computeQuestionStats(attempts) {
