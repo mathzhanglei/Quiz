@@ -937,6 +937,7 @@ button svg,
 
   .quiz-actions button,
   .result-actions button,
+  .result-actions a,
   .student-form button {
     width: 100%;
   }
