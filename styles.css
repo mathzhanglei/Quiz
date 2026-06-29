@@ -854,8 +854,7 @@ button svg,
   text-align: center;
 }
 
-.qr-link,
-.qr-path {
+.qr-link {
   display: block;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -865,14 +864,6 @@ button svg,
 .qr-link {
   color: var(--primary-strong);
   font-weight: 800;
-}
-
-.qr-path {
-  padding: 10px;
-  color: var(--muted);
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  border-radius: 8px;
 }
 
 .qr-card-actions {

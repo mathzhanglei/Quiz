@@ -137,10 +137,6 @@
     link.rel = "noopener";
     link.textContent = item.quizUrl;
 
-    const path = document.createElement("code");
-    path.className = "qr-path";
-    path.textContent = item.path;
-
     const actions = document.createElement("div");
     actions.className = "qr-card-actions";
 
@@ -164,7 +160,7 @@
     downloadButton.addEventListener("click", () => downloadQr(qrBox, item.setId));
 
     actions.append(openButton, copyButton, downloadButton);
-    article.append(head, canvasWrap, link, path, actions);
+    article.append(head, canvasWrap, link, actions);
     drawQr(qrBox, item.quizUrl, fallback, downloadButton);
     return article;
   }
