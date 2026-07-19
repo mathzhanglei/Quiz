@@ -63,6 +63,7 @@ qrcodes.js              二维码索引逻辑
 stats.js                统计逻辑
 styles.css              页面样式
 supabase/schema.sql     Supabase 建表和函数
+.github/workflows/      GitHub Actions 自动任务
 question-sets/          题库 CSV 文件夹
 ```
 
@@ -229,6 +230,26 @@ settings: {
 4. 确认出现一行新记录
 5. 打开 `stats.html?set=1`
 6. 输入统计口令并点击「自动读取」
+
+### 4. 每天自动访问数据库
+
+项目里已经包含 GitHub Actions 自动任务：
+
+```text
+.github/workflows/supabase-keepalive.yml
+```
+
+它每天自动调用一次 Supabase 的 `quiz_ping()` 函数，只返回服务器时间，不读取、不修改成绩数据。这个任务会直接从 `questions.js` 读取 `supabaseUrl` 和 `supabaseAnonKey`，不需要另外设置 GitHub Secrets。
+
+启用步骤：
+
+1. 在 Supabase 的 `SQL Editor` 重新运行一次 `supabase/schema.sql`
+2. 把本项目提交并推送到 GitHub
+3. 打开 GitHub 仓库的 `Actions`
+4. 进入 `Supabase Keepalive`
+5. 点击 `Run workflow` 手动运行一次，确认结果是成功
+
+定时任务使用 UTC 时间 `20:17`，大约对应北京时间凌晨 `04:17`。GitHub 定时任务有时会延迟几分钟，这是正常现象。
 
 ## GitHub Pages 部署
 

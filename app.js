@@ -914,7 +914,6 @@
     const requested = String(params.get("set") || params.get("paper") || defaultSet || "").trim();
     const explicit = Boolean(params.get("set") || params.get("paper"));
     const setIds = Object.keys(questionSets || {});
-    if (!setIds.length && !explicit) return { id: "" };
 
     const exactId = setIds.find((id) => id === requested);
     const normalizedId = setIds.find((id) => normalizeSetId(id) === normalizeSetId(requested));
@@ -927,7 +926,7 @@
       };
     }
 
-    if (explicit && isSafeSetId(requested)) {
+    if (requested && isSafeSetId(requested)) {
       return autoQuestionSet(requested, settingsForSets, explicit);
     }
 

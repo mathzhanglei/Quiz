@@ -8,7 +8,7 @@
     ...(selectedQuestionSet.settings || {})
   };
   if (selectedQuestionSet.questionSource) settings.questionSource = selectedQuestionSet.questionSource;
-  const questionSource = settings.questionSource || "./question-sets/questions.csv";
+  const questionSource = settings.questionSource || "./question-sets/questions-1.csv";
   const selectedQuizTitle = selectedQuestionSet.title || (selectedQuestionSet.meta && selectedQuestionSet.meta.title) || (config.meta && config.meta.title) || "";
   const statsRpcName = String(settings.statsRpcName || "quiz_results_for_stats").trim();
   const clearRpcName = String(settings.clearRpcName || "quiz_clear_results_for_set").trim();
@@ -343,25 +343,29 @@
   }
 
   function showEmptyStructure() {
+    const sampleAnswers = questions.map((question, index) => ({
+      id: question.id,
+      selected: index % 5 === 0 ? "B" : question.answer,
+      correct: question.answer,
+      isCorrect: index % 5 !== 0,
+      score: index % 5 === 0 ? 0 : Number(question.score || 1),
+      maxScore: Number(question.score || 1)
+    }));
+    const sampleScore = sampleAnswers.reduce((sum, answer) => sum + answer.score, 0);
+    const sampleTotal = sampleAnswers.reduce((sum, answer) => sum + answer.maxScore, 0);
+    const sampleCorrect = sampleAnswers.filter((answer) => answer.isCorrect).length;
     const sample = [{
       name: "示例学生",
       className: "示例班级",
       studentId: "001",
-      score: 24,
-      total: 30,
-      percent: 80,
-      correctCount: 24,
-      questionCount: 30,
+      score: sampleScore,
+      total: sampleTotal,
+      percent: sampleTotal ? Math.round((sampleScore / sampleTotal) * 100) : 0,
+      correctCount: sampleCorrect,
+      questionCount: sampleAnswers.length,
       durationSeconds: 600,
       submittedAt: new Date().toISOString(),
-      answers: questions.map((question, index) => ({
-        id: question.id,
-        selected: index % 5 === 0 ? "B" : question.answer,
-        correct: question.answer,
-        isCorrect: index % 5 !== 0,
-        score: index % 5 === 0 ? 0 : Number(question.score || 1),
-        maxScore: Number(question.score || 1)
-      }))
+      answers: sampleAnswers
     }];
     renderStats(sample);
     setStatus("已显示示例统计结构。");
@@ -936,7 +940,6 @@
     const requested = String(params.get("set") || params.get("paper") || defaultSet || "").trim();
     const explicit = Boolean(params.get("set") || params.get("paper"));
     const setIds = Object.keys(questionSets || {});
-    if (!setIds.length && !explicit) return { id: "", explicit };
 
     const exactId = setIds.find((id) => id === requested);
     const normalizedId = setIds.find((id) => normalizeSetId(id) === normalizeSetId(requested));
@@ -949,7 +952,7 @@
       };
     }
 
-    if (explicit && isSafeSetId(requested)) {
+    if (requested && isSafeSetId(requested)) {
       return autoQuestionSet(requested, settingsForSets, explicit);
     }
 

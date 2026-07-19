@@ -172,6 +172,21 @@ $$;
 revoke all on function public.quiz_clear_results_for_set(text, text) from public;
 grant execute on function public.quiz_clear_results_for_set(text, text) to anon;
 
+create or replace function public.quiz_ping()
+returns table (
+  ok boolean,
+  server_time timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select true as ok, now() as server_time;
+$$;
+
+revoke all on function public.quiz_ping() from public;
+grant execute on function public.quiz_ping() to anon;
+
 notify pgrst, 'reload schema';
 
 -- Run this after changing the token below to your own teacher password.
